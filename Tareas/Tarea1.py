@@ -4,8 +4,10 @@ from pyglet.app import run
 from pyglet.graphics import Batch
 from random import randint
 import numpy as np
+from math import cos
+from time import time
 
-window = Window(192*7, 108*7, "TAREA 1", resizable = True)
+window = Window(192*7, 108*7, "TAREA 1 Franco González Leiva", resizable = True)
 batch = Batch()
 
 class Estrellas:
@@ -34,11 +36,12 @@ class Naves:
         self.posx = posx
         self.posy = posy
         self.escala = escala
+        amar = (255,200,100)
         rojo = (125,0,0)
         gris = (65,65,65)
         col_ = (randint(0,255),randint(0,255),randint(0,255))
 
-        self.cuerpo = [ #cuerpo principal
+        self.cuerpo = np.array([ #cuerpo principal
                         Triangle(self.posx-4*self.escala,   self.posy,
                                 self.posx+4*self.escala,    self.posy,
                                 self.posx,                  self.posy+20*self.escala,
@@ -46,6 +49,15 @@ class Naves:
                         Rectangle(self.posx-4*self.escala,  self.posy-11*self.escala,
                                 width=8*self.escala,        height=11*self.escala,
                                 color=rojo, batch=batch),
+                        #fuego del motor
+                        Triangle(self.posx-5*self.escala,   self.posy-14*self.escala,
+                                self.posx-4*self.escala,    self.posy-18*self.escala,
+                                self.posx-3*self.escala,    self.posy-14*self.escala,
+                                color=amar, batch=batch),
+                        Triangle(self.posx+5*self.escala,   self.posy-14*self.escala,
+                                self.posx+4*self.escala,    self.posy-18*self.escala,
+                                self.posx+3*self.escala,    self.posy-14*self.escala,
+                                color=amar, batch=batch),
                         #ala izq
                         Rectangle(self.posx-13*self.escala, self.posy-9*self.escala,
                                 width=8*self.escala,        height=8*self.escala,
@@ -142,27 +154,33 @@ class Naves:
                         Rectangle(self.posx-1*self.escala,  self.posy-9*self.escala,
                                 width=2*self.escala,        height=9*self.escala,
                                 color=col_, batch=batch)
-                        ]
+                        ])
 
 #creacion de las n-estrellas
-num_estrellas = 750
+num_estrellas = 800
 estrellas = np.array(range(num_estrellas),dtype=object)
 for i in range(num_estrellas):
     estrellas[i] = Estrellas()
 
 #creacion de las naves
 navx, navy = window.width//2, window.height//2
-nave1 = Naves(navx    ,navy    ,4)
-nave2 = Naves(navx-200,navy-100,3)
-nave3 = Naves(navx+200,navy-100,3)
+naves = np.array([Naves(navx    ,navy    ,4),
+                  Naves(navx-200,navy-100,3),
+                  Naves(navx+200,navy-100,3)])
 
 @window.event
 def on_draw():
     window.clear()
     batch.draw()
+
+    #movimieto estrellas
     for estrella in estrellas:
         estrella.move_down()
         estrella.up()
+    #animacion del fuego de las naves
+    for nave in naves:
+        nave.cuerpo[2].y2 = nave.posy-18*nave.escala + 2*cos(time()*4)
+        nave.cuerpo[3].y2 = nave.posy-18*nave.escala + 2*cos(time()*4)
 
 if __name__ == "__main__":
     run()
