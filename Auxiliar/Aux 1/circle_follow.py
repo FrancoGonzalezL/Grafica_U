@@ -6,7 +6,7 @@ from pyglet.app import run
 window = Window()
 
 circle = Circle(x=window.width//2, y=window.height//2, radius=100, color=(20, 225, 30))
-
+                
 @window.event
 def on_mouse_motion(x, y, dx, dy):
     circle.x, circle.y = x, y
