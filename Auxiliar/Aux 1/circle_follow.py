@@ -8,16 +8,18 @@ window = Window()
 circle = Circle(x=window.width//2, y=window.height//2, radius=100, color=(20, 225, 30))
 
 @window.event
+def on_mouse_motion(x, y, dx, dy):
+    circle.x, circle.y = x, y
+
+@window.event
 def on_draw():
     window.clear()
     circle.draw()
 
-def update_circle(x, y, dx, dy):
-    circle.x, circle.y = x, y
-window.on_mouse_motion = update_circle
-#@window.event
+
 #def update_circle(x, y, dx, dy):
 #    circle.x, circle.y = x, y
 #window.on_mouse_motion = update_circle
+
 
 run()

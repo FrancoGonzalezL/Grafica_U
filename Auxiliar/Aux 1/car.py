@@ -18,6 +18,7 @@ class Car:
         self.body = pyglet.shapes.Star(x=70, y=70, outer_radius=60, inner_radius=35,
                                        rotation=270, num_spikes=3,
                                        color=(190, 33, 78), batch=batch)
+        
         self.advance = 0
         self.rotate = 0
 
@@ -32,8 +33,10 @@ class Car:
         self.body.y += self.vy * self.advance*self.movement_speed * -np.sin(np.deg2rad(self.body.rotation))
         pass
 
+#llamar clase auto
 car = Car()
 
+#funciona cuando se preciona tecla
 @window.event
 def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.W:
@@ -45,6 +48,7 @@ def on_key_press(symbol, modifiers):
     elif symbol == pyglet.window.key.D:
         car.rotate = 1
 
+#cuando se suelta tecla se detiene
 @window.event
 def on_key_release(symbol, modifiers):
     if symbol == pyglet.window.key.W:
@@ -55,13 +59,15 @@ def on_key_release(symbol, modifiers):
         car.rotate = 0
     elif symbol == pyglet.window.key.D:
         car.rotate = 0
-
+    if symbol == pyglet.window.key.SPACE:
+        #llamada al metodo
+        window.set_fullscreen(not window._fullscreen)
+#redibujado
 @window.event
 def on_draw():
     window.clear()
-
     car.udpate()
-
+    #dibuja todo lo que esta unido al batch
     batch.draw()
 
 

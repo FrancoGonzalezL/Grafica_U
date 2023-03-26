@@ -19,6 +19,7 @@ def on_mouse_press(x, y, button, modifiers):
 
 @window.event
 def on_mouse_drag(x, y, dx, dy, buttons, modifiers):
+    #          ?? why & ??
     if buttons & mouse.LEFT:
         circle.x, circle.y = x, y
 
