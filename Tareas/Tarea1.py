@@ -155,6 +155,10 @@ class Naves:
                                 width=2*self.escala,        height=9*self.escala,
                                 color=col_, batch=batch)
                         ])
+    #movimiento cosenoidal del fuego
+    def animacion_motor(self):
+        self.cuerpo[2].y2 = self.posy-18*self.escala + 2*cos(time()*4)
+        self.cuerpo[3].y2 = self.posy-18*self.escala + 2*cos(time()*4)
 
 #creacion de las n-estrellas
 num_estrellas = 800
@@ -179,8 +183,6 @@ def on_draw():
         estrella.up()
     #animacion del fuego de las naves
     for nave in naves:
-        nave.cuerpo[2].y2 = nave.posy-18*nave.escala + 2*cos(time()*4)
-        nave.cuerpo[3].y2 = nave.posy-18*nave.escala + 2*cos(time()*4)
-
+        nave.animacion_motor()
 if __name__ == "__main__":
     run()
