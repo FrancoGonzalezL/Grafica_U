@@ -1,4 +1,5 @@
 # coding=utf-8
+
 """Showing how to handle textures on a cube"""
 
 import sys
