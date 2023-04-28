@@ -64,8 +64,10 @@ def on_key_press(symbol, modifiers):
         controller.translation[1] += 0.1
     if symbol == pyglet.window.key.DOWN:
         controller.translation[1] -= 0.1
-    elif symbol == pyglet.window.key.ESCAPE:
+    if symbol == pyglet.window.key.ESCAPE:
         controller.close()
+    elif symbol == pyglet.window.key.A:
+        controller.rotation()
 
 
 @controller.event
