@@ -8,11 +8,11 @@ import numpy as np
 import sys
 import os.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import repo.grafica.transformations as tr
-import repo.grafica.basic_shapes as bs
-import repo.grafica.scene_graph as sg
-import repo.grafica.easy_shaders as es
-import repo.grafica.performance_monitor as pm
+import grafica.transformations as tr
+import grafica.basic_shapes as bs
+import grafica.scene_graph as sg
+import grafica.easy_shaders as es
+import grafica.performance_monitor as pm
 
 __author__ = "Daniel Calderon"
 __license__ = "MIT"
@@ -138,11 +138,12 @@ if __name__ == "__main__":
     blueCarNode.transform = np.matmul(tr.rotationZ(-np.pi/4), tr.translate(3.0,0,0.5))
 
     # Using the same view and projection matrices in the whole application
-    projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
+    #projection = tr.perspective(45, float(width)/float(height), 0.1, 100)
+    projection = tr.ortho(-4, 4, -4, 4, 0.1, 100)  # ORTOGRAPHIC_PROJECTION
     glUniformMatrix4fv(glGetUniformLocation(mvpPipeline.shaderProgram, "projection"), 1, GL_TRUE, projection)
     
     view = tr.lookAt(
-            np.array([5,5,7]),
+            np.array([1,5,3]),
             np.array([0,0,0]),
             np.array([0,0,1])
         )

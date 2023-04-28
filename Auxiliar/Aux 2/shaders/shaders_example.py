@@ -23,15 +23,19 @@ class Controller(pyglet.window.Window):
         self.shapes = []
         self.shapes_index = 0
         self.repeats = 0
+
     def setPipelines(self, p):
         self.pipelines = p
         self.pipeline = self.pipelines[self.pipeline_index]
+
     def nextPipeline(self):
         self.pipeline_index = (self.pipeline_index + 1) % len(self.pipelines) 
         self.pipeline = self.pipelines[self.pipeline_index]
         glUseProgram(self.pipeline.shaderProgram)
+
     def setShapes(self, s):
         self.shapes = s
+
     def nextShape(self):
         self.shapes_index = (self.shapes_index + 1) % len(self.shapes) 
 
