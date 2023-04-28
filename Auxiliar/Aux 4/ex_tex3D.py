@@ -170,14 +170,14 @@ def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.O:
         camera.set_projection(ORTOGRAPHIC_PROJECTION)
     if symbol == pyglet.window.key.A:
-        camera.phi_direction -= 1
+        camera.phi_direction -= 0.1
     if symbol == pyglet.window.key.D:
-        camera.phi_direction += 1
+        camera.phi_direction += 0.1
     if symbol == pyglet.window.key.W:
-        camera.theta_direction -= 1
+        camera.theta_direction -= 0.1
     if symbol == pyglet.window.key.S:
-        camera.theta_direction += 1
-    if symbol == pyglet.window.key.PLUS:
+        camera.theta_direction += 0.1
+    if symbol == pyglet.window.key.EQUAL:
         camera.R_direction -= 1
     if symbol == pyglet.window.key.MINUS:
         camera.R_direction += 1
@@ -241,14 +241,14 @@ def on_key_press(symbol, modifiers):
 @controller.event
 def on_key_release(symbol, modifiers):
     if symbol == pyglet.window.key.A:
-        camera.phi_direction += 1
+        camera.phi_direction += 0.1
     if symbol == pyglet.window.key.D:
-        camera.phi_direction -= 1
+        camera.phi_direction -= 0.1
     if symbol == pyglet.window.key.W:
-        camera.theta_direction += 1
+        camera.theta_direction += 0.1
     if symbol == pyglet.window.key.S:
-        camera.theta_direction -= 1
-    if symbol == pyglet.window.key.PLUS:
+        camera.theta_direction -= 0.1
+    if symbol == pyglet.window.key.EQUAL:
         camera.R_direction += 1
     if symbol == pyglet.window.key.MINUS:
         camera.R_direction -= 1

@@ -8,10 +8,10 @@ import numpy as np
 import sys
 import os.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import repo.grafica.transformations as tr
-import repo.grafica.basic_shapes as bs
-import repo.grafica.scene_graph as sg
-import repo.grafica.easy_shaders as es
+import grafica.transformations as tr
+import grafica.basic_shapes as bs
+import grafica.scene_graph as sg
+import grafica.easy_shaders as es
 
 __author__ = "Daniel Calderon"
 __license__ = "MIT"

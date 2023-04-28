@@ -100,7 +100,7 @@ class SimpleModelViewProjectionShaderProgram:
         glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, 36, ctypes.c_void_p(12))
         glEnableVertexAttribArray(color)
 
-        normal = glGetAttribLocation(self.shaderProgram, "normal")
+        normal = glGetAttribLocation(self.shaderProgram, "vn")
         glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE, 36, ctypes.c_void_p(24))
         glEnableVertexAttribArray(normal)
 
