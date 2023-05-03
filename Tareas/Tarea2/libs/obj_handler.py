@@ -100,7 +100,7 @@ def readOFF(filename, color):
             index += 3        
 
 
-        return Shape(vertexDataF, indices)
+        return _Shape(vertexDataF, indices)
 
 def read_OBJ(filename, color):
 

@@ -357,6 +357,7 @@ class SimpleModelViewProjectionShaderProgram:
             in vec3 color;
 
             out vec3 newColor;
+             
             void main()
             {
                 gl_Position = projection * view * model * vec4(position, 1.0f);
@@ -394,11 +395,11 @@ class SimpleModelViewProjectionShaderProgram:
 
         # 3d vertices + rgb color specification => 3*4 + 3*4 = 24 bytes
         position = glGetAttribLocation(self.shaderProgram, "position")
-        glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(0))
+        glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE, 36, ctypes.c_void_p(0))
         glEnableVertexAttribArray(position)
         
         color = glGetAttribLocation(self.shaderProgram, "color")
-        glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, 24, ctypes.c_void_p(12))
+        glVertexAttribPointer(color, 3, GL_FLOAT, GL_FALSE, 36, ctypes.c_void_p(12))
         glEnableVertexAttribArray(color)
 
         # Unbinding current vao
@@ -473,11 +474,11 @@ class SimpleTextureModelViewProjectionShaderProgram:
 
         # 3d vertices + 2d texture coordinates => 3*4 + 2*4 = 20 bytes
         position = glGetAttribLocation(self.shaderProgram, "position")
-        glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(0))
+        glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(0))
         glEnableVertexAttribArray(position)
         
         texCoords = glGetAttribLocation(self.shaderProgram, "texCoords")
-        glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE, 20, ctypes.c_void_p(12))
+        glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE, 32, ctypes.c_void_p(12))
         glEnableVertexAttribArray(texCoords)
 
         # Unbinding current vao

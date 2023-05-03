@@ -15,7 +15,7 @@ from libs.assets_path import getAssetPath
 
 from OpenGL.GL import *
 
-#wsys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 """
 Controles:
@@ -97,7 +97,6 @@ class Camera:
 
 camera = Camera()
 controller = Controller(width=WIDTH, height=HEIGHT)
-
 
 # Setting up the clear screen color
 glClearColor(0.1, 0.1, 0.1, 1.0)
