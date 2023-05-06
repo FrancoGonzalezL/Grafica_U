@@ -25,19 +25,20 @@ class Controller(pyglet.window.Window):
         self.total_time = 0.0
         self.pipeline = sh.SimpleGouraudShaderProgram()
         self.dim = 9
-        self.anchoMapa = 15
-        self.largoMapa = 30
+        self.anchoMapa = 10
+        self.largoMapa = 100
 
 controller = Controller(width=WIDTH, height=HEIGHT)
 
-nave = objetos.Nave()
-muros = objetos.MurosMapa(controller)
-escena = grafo.grafo(controller,controller.pipeline, muros)
 camera = objetos.Camera(controller, WIDTH, HEIGHT)
-
+nave = objetos.Nave()
+muros = objetos.MurosMapa(controller,0.04)
+meteoritos = objetos.Meteoritos(controller,"meteorito",4)
 obstaculos = np.array([objetos.Obstaculos(controller,"among", 0.5),
                        objetos.Obstaculos(controller,"pochita", 2.0),
                        objetos.Obstaculos(controller,"roca", 0.6)])
+
+escena = grafo.grafo(controller,controller.pipeline, muros, meteoritos)
 
 glUseProgram(controller.pipeline.shaderProgram)
 glClearColor(0.0, 0.7, 1.0, 1.0)
@@ -48,37 +49,28 @@ def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.ESCAPE:
         controller.close()
     elif symbol == pyglet.window.key.W:
-        nave.speedX = 2
+        nave.speed =  2
     elif symbol == pyglet.window.key.S:
-        nave.speedX = -2
+        nave.speed = -2
     elif symbol == pyglet.window.key.A:
-        nave.speedZ = -2
-        nave.rotationY = 1
+        nave.angular_speed = -2
     elif symbol == pyglet.window.key.D:
-        nave.speedZ = 2
-        nave.rotationY =  -1
+        nave.angular_speed =  2
 
 @controller.event
 def on_key_release(symbol, modifiers):
     if   symbol == pyglet.window.key.W:
-        nave.speedX = 0
+        nave.speed = 0
     elif symbol == pyglet.window.key.S:
-        nave.speedX = 0
+        nave.speed = 0
     elif symbol == pyglet.window.key.A:
-        nave.speedZ = 0
-        nave.rotationY = 0
+        nave.angular_speed = 0
     elif symbol == pyglet.window.key.D:
-        nave.speedZ = 0
-        nave.rotationY = 0
+        nave.angular_speed = 0
 
 @controller.event
 def on_mouse_motion(x, y, dx, dy): 
-    if   dy > 0 and nave.positionY < 8: 
-        nave.positionY += dy*18/HEIGHT
-        nave.rotationZ = dy/2
-    elif dy < 0 and nave.positionY > 0:
-        nave.positionY += dy*18/HEIGHT
-        nave.rotationZ = dy/2
+    nave.phi = (y/HEIGHT-1)*np.pi/2 + (y/HEIGHT)*np.pi/2
 
 
 @controller.event
@@ -107,12 +99,14 @@ def on_draw():
     sg.drawSceneGraphNode(escena, controller.pipeline, "model")
 
 
-def update(dt,controller, nave, obstaculos, escena):
+def update(dt,controller, nave, obstaculos, meteoritos, escena):
     controller.total_time += dt
-    nave.move(controller, escena, dt)
+    nave.update(controller, escena, dt)
+    meteoritos.update(controller,escena,dt)
     for obstaculo in obstaculos:
-        obstaculo.move(controller,escena, dt)
+        obstaculo.update(controller,escena, dt)
+    
 
 if __name__ == '__main__':
-    pyglet.clock.schedule(update, controller, nave, obstaculos, escena)
+    pyglet.clock.schedule(update, controller, nave, obstaculos,meteoritos, escena)
     pyglet.app.run(1/60)

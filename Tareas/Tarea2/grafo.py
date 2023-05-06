@@ -16,14 +16,15 @@ ASSETS = {
 }
 
 
-def grafo(controller,pipeline,muros):
+def grafo(controller,pipeline,muros,meteorit):
 
     gpuMuro    = createGPUShape(pipeline, createColorNormalsCube(0.5, 0.5, 0.5))
     gpuSuelo   = createGPUShape(pipeline, createColorNormalsCube(0.0, 0.4, 0.0))
-    gpuNave    = createGPUShape(pipeline, read_OBJ(ASSETS["nave"],    (0.8, 0.3, 0.3)))
-    gpuAmong   = createGPUShape(pipeline, read_OBJ(ASSETS["objeto1"], (1.0, 0.0, 0.0)))
-    gpuPochita = createGPUShape(pipeline, read_OBJ(ASSETS["pochita"], (1.0,1.0,1.0)))
-    gpuRoca    = createGPUShape(pipeline, read_OBJ(ASSETS["roca"], (0.3,0.9,0.3)))
+    gpuMeteori = createGPUShape(pipeline, createColorNormalsCube(0.4, 0.4, 0.4))
+    gpuNave    = createGPUShape(pipeline, read_OBJ(ASSETS["nave"],   (0.8, 0.3, 0.3)))
+    gpuAmong   = createGPUShape(pipeline, read_OBJ(ASSETS["objeto1"],(1.0, 0.0, 0.0)))
+    gpuPochita = createGPUShape(pipeline, read_OBJ(ASSETS["pochita"],(1.0, 1.0, 1.0)))
+    gpuRoca    = createGPUShape(pipeline, read_OBJ(ASSETS["roca"],   (0.3, 0.9, 0.3)))
 
 #-----------------------------------
     #transformaciones basicas al modelo nave
@@ -66,8 +67,8 @@ def grafo(controller,pipeline,muros):
 #-----------------------------------
 
     textsuelo = SceneGraphNode("textSuelo")
-    textsuelo.transform = tr.matmul([tr.translate(0.0,0.0,5.0),
-                                     tr.scale(controller.largoMapa,1.0,controller.anchoMapa+10)])
+    textsuelo.transform = tr.matmul([tr.translate(0.0,0.0,10.0),
+                                     tr.scale(controller.largoMapa+200,1.0,controller.anchoMapa+20)])
     textsuelo.childs += [gpuSuelo]
     suelo = SceneGraphNode("suelo")
     suelo.transform = tr.translate(controller.largoMapa/2, -1.0,0.0)
@@ -75,11 +76,20 @@ def grafo(controller,pipeline,muros):
 
     murosL = np.zeros(len(muros.posiciones),dtype=object)
     for i in range(len(muros.posiciones)):
-        murosL[i] = SceneGraphNode("muro"+"i")
-        murosL[i].transform = tr.matmul([tr.translate(muros.posiciones[i][0]-controller.largoMapa/2, 2.0 ,muros.posiciones[i][1]-controller.anchoMapa/2),
+        murosL[i] = SceneGraphNode("muro"+str(i))
+        murosL[i].transform = tr.matmul([tr.translate(muros.posiciones[i][0]-controller.largoMapa/2,
+                                                      2.0,
+                                                      muros.posiciones[i][1]-controller.anchoMapa/2),
                                         tr.scale(1.0, muros.posiciones[i][2], muros.posiciones[i][3])])
         murosL[i].childs += [gpuMuro]
         suelo.childs += [murosL[i]]
+
+    meteoritos = np.zeros(meteorit.total, dtype=object)
+    for i in range(meteorit.total):
+        meteoritos[i] = SceneGraphNode("meteorito"+str(i))
+        meteoritos[i].childs += [gpuMeteori]
+        suelo.childs += [meteoritos[i]]
+
 #----------------------------------- 
     escena = SceneGraphNode("escena")
     escena.childs += [naves]
