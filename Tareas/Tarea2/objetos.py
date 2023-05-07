@@ -23,7 +23,7 @@ class Camera:
         self.view = tr.lookAt(self.eye, self.at, self.up)
 
 class Nave:
-    def __init__(self):
+    def __init__(self,max_speed,max_angular_speed):
         self.positionX = 0
         self.positionZ = 0
         self.positionY = 0
@@ -33,12 +33,16 @@ class Nave:
         self.angular_speed = 0
         self.phi           = 0
 
+        self.max_speed = max_speed
+        self.max_angular_speed = max_angular_speed
 
     def update(self,controller,grafo,dt):
-        self.theta     += dt*self.angular_speed*np.pi/8
-        self.positionX += dt*self.speed*np.cos(self.theta)*np.cos(self.phi)
-        self.positionZ += dt*self.speed*np.sin(self.theta)*np.cos(self.phi)
-        self.positionY += dt*self.speed*np.sin(self.phi)
+        speed = self.speed*self.max_speed
+        angular_speed = self.angular_speed*self.max_angular_speed
+        self.theta     += dt*angular_speed*np.pi/8
+        self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
+        self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
+        self.positionY += dt*speed*np.sin(self.phi)
 
 
         naves = findNode(grafo,"naves")
@@ -81,14 +85,15 @@ class Obstaculos:
 
 #grupo con posiciones aleatorias pero estaticas
 class MurosMapa:
-    def __init__(self,controller,densidad):
+    def __init__(self,controller,densidad,altura_max,largo_max):
         self.total = 0
-        self.posiciones = []
+        posiciones = []
         for i in range(controller.largoMapa):
             for j in range(controller.anchoMapa):
                 if np.random.random() < densidad:
-                    self.posiciones.append([i, j, int(1 + np.random.random()*7), int(1+np.random.random()*7)])
+                    posiciones.append([i, j, int(1 + np.random.random()*altura_max), int(1+np.random.random()*largo_max)])
                     self.total += 1
+        self.posiciones = np.array(posiciones)
 
 
 #Grupo con todo aleatorio

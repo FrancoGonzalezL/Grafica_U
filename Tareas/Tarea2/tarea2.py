@@ -26,14 +26,14 @@ class Controller(pyglet.window.Window):
         self.pipeline = sh.SimpleGouraudShaderProgram()
         self.dim = 9
         self.anchoMapa = 10
-        self.largoMapa = 100
-
+        self.largoMapa = 20
 controller = Controller(width=WIDTH, height=HEIGHT)
 
 camera = objetos.Camera(controller, WIDTH, HEIGHT)
-nave = objetos.Nave()
-muros = objetos.MurosMapa(controller,0.04)
-meteoritos = objetos.Meteoritos(controller,"meteorito",4)
+nave = objetos.Nave(max_speed = 3, max_angular_speed = 3)
+
+muros = objetos.MurosMapa(controller, densidad = 0.04, altura_max = 8, largo_max = 8)
+meteoritos = objetos.Meteoritos(controller, nodo = "meteorito", total = 4)
 obstaculos = np.array([objetos.Obstaculos(controller,"among", 0.5),
                        objetos.Obstaculos(controller,"pochita", 2.0),
                        objetos.Obstaculos(controller,"roca", 0.6)])
@@ -49,13 +49,13 @@ def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.ESCAPE:
         controller.close()
     elif symbol == pyglet.window.key.W:
-        nave.speed =  2
+        nave.speed =  1
     elif symbol == pyglet.window.key.S:
-        nave.speed = -2
+        nave.speed = -1
     elif symbol == pyglet.window.key.A:
-        nave.angular_speed = -2
+        nave.angular_speed = -1
     elif symbol == pyglet.window.key.D:
-        nave.angular_speed =  2
+        nave.angular_speed =  1
 
 @controller.event
 def on_key_release(symbol, modifiers):
@@ -77,8 +77,9 @@ def on_mouse_motion(x, y, dx, dy):
 def on_draw():
     controller.clear()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    
     camera.update(controller, nave)
-    #para el grafo
+
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "La"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ld"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ls"), 1.0, 1.0, 1.0)
@@ -86,7 +87,7 @@ def on_draw():
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Kd"), 0.9, 0.9, 0.9)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "lightPosition"), camera.eye[0], camera.eye[1], camera.eye[2])
-    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "viewPosition"), camera.eye[0], camera.eye[1], camera.eye[2])
+    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "viewPosition"),  camera.eye[0], camera.eye[1], camera.eye[2])
     glUniform1ui(glGetUniformLocation(controller.pipeline.shaderProgram, "shininess"), 100)
     glUniform1f(glGetUniformLocation(controller.pipeline.shaderProgram, "constantAttenuation"), 0.0001)
     glUniform1f(glGetUniformLocation(controller.pipeline.shaderProgram, "linearAttenuation"), 0.03)
