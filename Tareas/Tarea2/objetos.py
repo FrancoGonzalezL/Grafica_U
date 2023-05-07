@@ -58,12 +58,12 @@ class Nave:
 #Este Grupo solo da vueltas
 class Obstaculos:
     def __init__(self,controller,nodo,escala):
-        self.nodo = nodo
+        self.nodo   = nodo
         self.escala = escala
         self.speedZ = np.random.random()*6
-        self.positionX = np.random.randint(0,controller.largoMapa)
-        self.positionZ = np.random.randint(0,controller.anchoMapa)
-        self.positionY = np.random.randint(1, 4)
+        self.positionX = np.random.randint(-controller.largoMapa/2,controller.largoMapa/2)
+        self.positionZ = np.random.randint(-controller.anchoMapa/2,controller.anchoMapa/2)
+        self.positionY = np.random.randint(2, 4)
         self.speedrotationX = np.random.random()*2
         self.speedrotationY = np.random.random()*2
         self.speedrotationZ = np.random.random()*2
@@ -107,13 +107,13 @@ class Meteoritos:
             self.meteoritos[i][1] = 11                                            #Y
             self.meteoritos[i][2] = (0.5-np.random.random())*controller.anchoMapa #Z
 
-            self.meteoritos[i][3] = (0.5-np.random.random())*8  #SpeedX
-            self.meteoritos[i][4] = -1 -np.random.random()*9    #SpeedY
-            self.meteoritos[i][5] = (0.5-np.random.random())*8  #SpeedZ
+            self.meteoritos[i][3] = (0.5-np.random.random())*3     #SpeedX
+            self.meteoritos[i][4] = -10 -np.random.random()* 10    #SpeedY
+            self.meteoritos[i][5] = (0.5-np.random.random())*1     #SpeedZ
 
-            self.meteoritos[i][6] = np.random.random()*np.pi #angular_speedX
-            self.meteoritos[i][7] = np.random.random()*np.pi #Y
-            self.meteoritos[i][8] = np.random.random()*np.pi #Z
+            self.meteoritos[i][6] = np.random.random()*np.pi*4 #angular_speedX
+            self.meteoritos[i][7] = np.random.random()*np.pi*4 #Y
+            self.meteoritos[i][8] = np.random.random()*np.pi*4 #Z
     
     def update(self,controller,grafo,dt):
         for i in range(self.total):    
@@ -121,7 +121,7 @@ class Meteoritos:
 
             if self.meteoritos[i][1] < -1: 
                 self.meteoritos[i][0]  = (0.5-np.random.random())*controller.largoMapa
-                self.meteoritos[i][1]  = 12
+                self.meteoritos[i][1]  = 30
                 self.meteoritos[i][2]  = (0.5-np.random.random())*controller.anchoMapa
             else:                 
                 self.meteoritos[i][1] += dt*self.meteoritos[i][4]
@@ -132,4 +132,5 @@ class Meteoritos:
             meteoritoG.transform = tr.matmul([tr.translate(self.meteoritos[i][0], self.meteoritos[i][1], self.meteoritos[i][2]),
                                               tr.rotationX(self.meteoritos[i][6]*controller.total_time),
                                               tr.rotationY(self.meteoritos[i][7]*controller.total_time),
-                                              tr.rotationZ(self.meteoritos[i][8]*controller.total_time)])
+                                              tr.rotationZ(self.meteoritos[i][8]*controller.total_time),
+                                              tr.scale(0.1,0.05,0.1)])

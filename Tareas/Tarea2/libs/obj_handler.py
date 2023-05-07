@@ -143,14 +143,13 @@ def read_OBJ(filename, color):
 
                 vertex_data += [
                     vertex[0], vertex[1], vertex[2],
-                    color[0], color[1], color[2],
+                    color[0],  color[1],  color[2],
                     normal[0], normal[1], normal[2]
                 ]
 
             # Connecting the 3 vertices to create a triangle
             indices += [index, index + 1, index + 2]
             index += 3
-
     return _Shape(vertex_data, indices)
 
 

@@ -23,20 +23,36 @@ class Controller(pyglet.window.Window):
     def __init__(self, width, height, title=f"tarea2"):
         super().__init__(width, height, title)
         self.total_time = 0.0
-        self.pipeline = sh.SimpleGouraudShaderProgram()
+        self.pipeline = sh.SimpleTextureGouraudShaderProgram()
+
+        #mapa
         self.dim = 9
         self.anchoMapa = 10
-        self.largoMapa = 20
+        self.largoMapa = 14
+        
+        #nave
+        self.nave_speed         = 3
+        self.nave_angular_speed = 3
+
+        #OBJETOS
+        #muros
+        self.muros_densidad   = 0.06
+        self.muros_altura_max = 10
+        self.muros_largo_max  = 4
+        #meteoritos
+        self.meteoritos_total = 1
+
+
 controller = Controller(width=WIDTH, height=HEIGHT)
 
 camera = objetos.Camera(controller, WIDTH, HEIGHT)
-nave = objetos.Nave(max_speed = 3, max_angular_speed = 3)
+nave = objetos.Nave(controller.nave_speed, controller.nave_angular_speed)
 
-muros = objetos.MurosMapa(controller, densidad = 0.04, altura_max = 8, largo_max = 8)
-meteoritos = objetos.Meteoritos(controller, nodo = "meteorito", total = 4)
-obstaculos = np.array([objetos.Obstaculos(controller,"among", 0.5),
+muros = objetos.MurosMapa(controller, controller.muros_densidad, controller.muros_altura_max, controller.muros_largo_max)
+meteoritos = objetos.Meteoritos(controller, "meteorito", controller.meteoritos_total)
+obstaculos = np.array([objetos.Obstaculos(controller,"among1", 0.5),
                        objetos.Obstaculos(controller,"pochita", 2.0),
-                       objetos.Obstaculos(controller,"roca", 0.6)])
+                       objetos.Obstaculos(controller,"among2", 0.6)])
 
 escena = grafo.grafo(controller,controller.pipeline, muros, meteoritos)
 
@@ -83,7 +99,7 @@ def on_draw():
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "La"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ld"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ls"), 1.0, 1.0, 1.0)
-    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ka"), 0.2, 0.2, 0.2)
+    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ka"), 0.3, 0.3, 0.3)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Kd"), 0.9, 0.9, 0.9)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "lightPosition"), camera.eye[0], camera.eye[1], camera.eye[2])
