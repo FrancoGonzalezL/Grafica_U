@@ -1,3 +1,5 @@
+#Franco González
+
 import sys
 import os
 import pyglet
