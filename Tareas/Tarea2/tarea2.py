@@ -19,6 +19,12 @@ from OpenGL.GL import *
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+"""
+    W,D: para avanzar o retroceder
+    A,D: para girar (izquierda, derecha)
+    mouse: la nave sube o baja dependiendo de la posicion y del mouse
+"""
+
 WIDTH, HEIGHT = 900, 900
 
 class Controller(pyglet.window.Window):
@@ -27,10 +33,13 @@ class Controller(pyglet.window.Window):
         self.total_time = 0.0
         self.pipeline = sh.SimpleTextureGouraudShaderProgram()
 
+        #la dimension cambia la distancia a la camara y el tamaño de los objetos
+        #mientras mas grande su valor mas pequeño se ve todo
+        self.dim = 10
+
         #mapa
-        self.dim = 9
-        self.anchoMapa = 10
-        self.largoMapa = 14
+        self.anchoMapa = 16
+        self.largoMapa = 30
         
         #nave
         self.nave_speed         = 3
@@ -38,11 +47,11 @@ class Controller(pyglet.window.Window):
 
         #OBJETOS
         #muros
-        self.muros_densidad   = 0.04
+        self.muros_densidad   = 0.05
         self.muros_altura_max = 10
-        self.muros_largo_max  = 1
+        self.muros_largo_max  = 4
         #meteoritos
-        self.meteoritos_total = 1
+        self.meteoritos_total = 2
 
 
 controller = Controller(width=WIDTH, height=HEIGHT)
