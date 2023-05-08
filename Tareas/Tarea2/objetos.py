@@ -54,6 +54,15 @@ class Nave:
         nave.transform = tr.matmul([tr.rotationY(-self.theta),
                                     tr.rotationZ(self.phi)])
 
+        sombraEscuadron = findNode(grafo, "sombraEscuadron")
+        sombraEscuadron.transform = tr.matmul([tr.translate(self.positionX, -0.4, self.positionZ)])
+
+        sombra = findNode(grafo,"sombra")
+        sombra.transform = tr.matmul([tr.scale(1.0, 0.01, 1.0),
+                                      tr.rotationY(-self.theta),
+                                      tr.rotationZ(self.phi),
+                                      tr.rotationY(np.pi/2), tr.uniformScale(0.2)])
+
 
 #Este Grupo solo da vueltas
 class Obstaculos:
