@@ -23,12 +23,13 @@ ASSETS = {
     "pilar4": getAssetPath("Rocas\RockPillars_4.obj"),
     "pilar5": getAssetPath("Rocas\RockPillars_5.obj"),
     "pilar6": getAssetPath("Rocas\RockPillars_6.obj"),
-    "pilar7": getAssetPath("Rocas\RockPillars_7.obj"),
+    "roca":   getAssetPath("roca.obj"),
 
-    "pochita_text": getAssetPath("pochita.png"),
-    "rock":         getAssetPath("ROCK.jpg"),
+    "pochita_text":  getAssetPath("pochita.png"),
+    "rock_text":     getAssetPath("roca_text.png"),
     "nave_text":     getAssetPath("nave_text.png"),
     "among_text":    getAssetPath("among2.png"),
+    "pasto_text":    getAssetPath("pasto_text.jpg"),
 
 
     "red":         getAssetPath("RED.png"),
@@ -38,30 +39,22 @@ ASSETS = {
 }
 
 def textura(text):
-    return sh.textureSimpleSetup(ASSETS[text], GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    return sh.textureSimpleSetup(ASSETS[text], GL_MIRRORED_REPEAT, GL_MIRRORED_REPEAT, GL_LINEAR, GL_LINEAR)
 
 def grafo(controller,pipeline,muros,meteorit):
 
-    gpuPilares = np.array([
-                    #createGPUShape(pipeline, read_OBJ2(ASSETS["pilar2"])),
-                    #createGPUShape(pipeline, read_OBJ2(ASSETS["pilar3"])),
-                    createGPUShape(pipeline, read_OBJ2(ASSETS["pilar4"])),
-                    #createGPUShape(pipeline, read_OBJ2(ASSETS["pilar5"])),
-                    #createGPUShape(pipeline, read_OBJ2(ASSETS["pilar6"])),
-                    ])
-    for i in range(len(gpuPilares)):
-        gpuPilares[i].texture = textura("rock")
-    
-    gpuSuelo     = createGPUShape(pipeline, createTextureNormalsCube())
-    gpuMeteorito = createGPUShape(pipeline, read_OBJ2(ASSETS["pilar1"]))
+    #gpuMuro  = createGPUShape(pipeline, createTextureNormalsCube())
+
+    gpuSuelo     = createGPUShape(pipeline, createTextureNormalsCube(controller.largoMapa/2+200/2,controller.anchoMapa/2 + 30/2))
+    gpuPilar     = createGPUShape(pipeline, read_OBJ2(ASSETS["roca"]))
     gpuNave      = createGPUShape(pipeline, read_OBJ2(ASSETS["nave"]))
     gpuAmong1    = createGPUShape(pipeline, read_OBJ2(ASSETS["among1"]))
     gpuAmong2    = createGPUShape(pipeline, read_OBJ2(ASSETS["among2"]))
     gpuPochita   = createGPUShape(pipeline, read_OBJ2(ASSETS["pochita"]))
 
     
-    gpuSuelo.texture     = textura("green")
-    gpuMeteorito.texture = textura("rock")
+    gpuPilar.texture = textura("rock_text")
+    gpuSuelo.texture     = textura("pasto_text")
     gpuNave.texture      = textura("red") 
     gpuAmong1.texture    = textura("red")
     gpuAmong2.texture    = textura("blue")
@@ -90,11 +83,11 @@ def grafo(controller,pipeline,muros,meteorit):
     nave3.childs += [nave]
 
     #grupo de naves de mueve en conjunto
-    naves = SceneGraphNode("naves")
-    naves.transform = tr.identity()
-    naves.childs += [nave1]
-    naves.childs += [nave2]
-    naves.childs += [nave3]
+    escuadron = SceneGraphNode("escuadron")
+    escuadron.transform = tr.identity()
+    escuadron.childs += [nave1]
+    escuadron.childs += [nave2]
+    escuadron.childs += [nave3]
 #-----------------------------------
     among1 = SceneGraphNode("among1")
     among1.childs += [gpuAmong1]
@@ -125,19 +118,19 @@ def grafo(controller,pipeline,muros,meteorit):
                                                       2.0,
                                                       muros.posiciones[i][1]-controller.anchoMapa/2),
                                         tr.scale(1.0, muros.posiciones[i][2], muros.posiciones[i][3]),
-                                        tr.uniformScale(0.1)])
-        murosL[i].childs += [gpuPilares[np.random.randint(0,len(gpuPilares))]]
+                                        tr.uniformScale(1.0)])
+        murosL[i].childs += [gpuPilar]
         suelo.childs += [murosL[i]]
 
     meteoritos = np.zeros(meteorit.total, dtype=object)
     for i in range(meteorit.total):
         meteoritos[i] = SceneGraphNode("meteorito"+str(i))
-        meteoritos[i].childs += [gpuMeteorito]
+        meteoritos[i].childs += [gpuPilar]
         suelo.childs += [meteoritos[i]]
 #----------------------------------- 
 
     escena = SceneGraphNode("escena")
-    escena.childs += [naves]
+    escena.childs += [escuadron]
     escena.childs += [suelo]
 
     return escena

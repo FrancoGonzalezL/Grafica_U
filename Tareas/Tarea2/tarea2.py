@@ -36,9 +36,9 @@ class Controller(pyglet.window.Window):
 
         #OBJETOS
         #muros
-        self.muros_densidad   = 0.06
+        self.muros_densidad   = 0.04
         self.muros_altura_max = 10
-        self.muros_largo_max  = 4
+        self.muros_largo_max  = 1
         #meteoritos
         self.meteoritos_total = 1
 

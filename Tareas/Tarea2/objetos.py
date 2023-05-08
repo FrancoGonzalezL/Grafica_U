@@ -45,7 +45,7 @@ class Nave:
         self.positionY += dt*speed*np.sin(self.phi)
 
 
-        naves = findNode(grafo,"naves")
+        naves = findNode(grafo,"escuadron")
         naves.transform = tr.translate(self.positionX,
                                        self.positionY,
                                        self.positionZ)
@@ -111,9 +111,9 @@ class Meteoritos:
             self.meteoritos[i][4] = -10 -np.random.random()* 10    #SpeedY
             self.meteoritos[i][5] = (0.5-np.random.random())*1     #SpeedZ
 
-            self.meteoritos[i][6] = np.random.random()*np.pi*4 #angular_speedX
-            self.meteoritos[i][7] = np.random.random()*np.pi*4 #Y
-            self.meteoritos[i][8] = np.random.random()*np.pi*4 #Z
+            self.meteoritos[i][6] = np.random.random()*np.pi #angular_speedX
+            self.meteoritos[i][7] = np.random.random()*np.pi #Y
+            self.meteoritos[i][8] = np.random.random()*np.pi #Z
     
     def update(self,controller,grafo,dt):
         for i in range(self.total):    
@@ -133,4 +133,4 @@ class Meteoritos:
                                               tr.rotationX(self.meteoritos[i][6]*controller.total_time),
                                               tr.rotationY(self.meteoritos[i][7]*controller.total_time),
                                               tr.rotationZ(self.meteoritos[i][8]*controller.total_time),
-                                              tr.scale(0.1,0.05,0.1)])
+                                              tr.scale(1.0,0.5,1.0)])
