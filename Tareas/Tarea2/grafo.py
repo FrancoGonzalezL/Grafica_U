@@ -3,20 +3,17 @@ from libs.gpu_shape import createGPUShape
 from libs.assets_path import getAssetPath
 from libs.obj_handler import read_OBJ2
 from libs.basic_shapes import createTextureNormalsCube
+from libs.shaders import textureSimpleSetup
 
 from OpenGL.GL import *
-import OpenGL.GL.shaders
 
 import libs.transformations as tr
 import numpy as np
-import libs.easy_shaders as sh
 
 ASSETS = {
     "nave" :   getAssetPath("nave.obj"),
-    "among1" : getAssetPath("Among.obj"),
-    "among2":  getAssetPath("Among.obj"),
+    "among" : getAssetPath("Among.obj"),
     "pochita": getAssetPath("pochita3.obj"),
-
     "roca":   getAssetPath("roca.obj"),
 
     "pochita_text":  getAssetPath("pochita.png"),
@@ -25,25 +22,21 @@ ASSETS = {
     "among_text":    getAssetPath("among2.png"),
     "pasto_text":    getAssetPath("pasto_text.jpg"),
 
-
     "black":       getAssetPath("BLACK.jpg"),
     "red":         getAssetPath("RED.png"),
-    "green":       getAssetPath("GREEN.jpg"),
     "blue":        getAssetPath("BLUE.jpg"),
-    "grey":        getAssetPath("GREY.jpg")
 }
 
 def textura(text):
-    return sh.textureSimpleSetup(ASSETS[text], GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
+    return textureSimpleSetup(ASSETS[text], GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR)
 
 def grafo(controller,pipeline,muros,meteorit):
 
-    gpuSuelo     = createGPUShape(pipeline, createTextureNormalsCube(1,1,controller.largoMapa/2+200/2,controller.anchoMapa/2 + 30/2))
+    gpuSuelo     = createGPUShape(pipeline, createTextureNormalsCube(1,1,controller.anchoMapa/2 + 30/2,controller.largoMapa/2+200/2))
     gpuNave      = createGPUShape(pipeline, read_OBJ2(ASSETS["nave"]))
-
     gpuPilar     = createGPUShape(pipeline, read_OBJ2(ASSETS["roca"]))
-    gpuAmong1    = createGPUShape(pipeline, read_OBJ2(ASSETS["among1"]))
-    gpuAmong2    = createGPUShape(pipeline, read_OBJ2(ASSETS["among2"]))
+    gpuAmong1    = createGPUShape(pipeline, read_OBJ2(ASSETS["among"]))
+    gpuAmong2    = createGPUShape(pipeline, read_OBJ2(ASSETS["among"]))
     gpuPochita   = createGPUShape(pipeline, read_OBJ2(ASSETS["pochita"]))
     gpuSombra    = createGPUShape(pipeline, read_OBJ2(ASSETS["nave"]))
     gpuMuro      = np.zeros(muros.total, dtype=object)
@@ -58,7 +51,7 @@ def grafo(controller,pipeline,muros,meteorit):
     gpuSombra.texture    = textura("black")
 
     for i in range(muros.total):
-        gpuMuro[i]         = createGPUShape(pipeline, createTextureNormalsCube(muros.posiciones[i][3], muros.posiciones[i][2]/10, 1, muros.posiciones[i][2]))
+        gpuMuro[i]         = createGPUShape(pipeline, createTextureNormalsCube(muros.posiciones[i][3]/2, muros.posiciones[i][2]/2, muros.posiciones[i][2]/2, 1/2))
         gpuMuro[i].texture = textura("ladrillo_text")
 #-----------------------------------
     #transformaciones basicas al modelo nave
@@ -126,11 +119,11 @@ def grafo(controller,pipeline,muros,meteorit):
     among2 = SceneGraphNode("among2")
     among2.childs += [gpuAmong2]
 #-----------------------------------
-
     textsuelo = SceneGraphNode("textSuelo")
     textsuelo.transform = tr.matmul([tr.translate(0.0,0.0,10.0),
                                      tr.scale(controller.largoMapa+200,1.0,controller.anchoMapa+30)])
     textsuelo.childs += [gpuSuelo]
+
     suelo = SceneGraphNode("suelo")
     suelo.transform = tr.translate(controller.largoMapa/2, -1.0,0.0)
     suelo.childs += [textsuelo]
