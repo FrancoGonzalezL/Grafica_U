@@ -4,13 +4,44 @@
 from OpenGL.GL import *
 import OpenGL.GL.shaders
 from libs.gpu_shape import GPUShape
-
+from PIL import Image
 import sys
 import os.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from libs.assets_path import getAssetPath
+import numpy as np
 
 
+def textureSimpleSetup(imgName, sWrapMode, tWrapMode, minFilterMode, maxFilterMode):
+     # wrapMode: GL_REPEAT, GL_CLAMP_TO_EDGE
+     # filterMode: GL_LINEAR, GL_NEAREST
+    texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    
+    # texture wrapping params
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, sWrapMode)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tWrapMode)
+
+    # texture filtering params
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilterMode)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, maxFilterMode)
+    
+    image = Image.open(imgName)
+    img_data = np.array(image, np.uint8)
+
+    if image.mode == "RGB":
+        internalFormat = GL_RGB
+        format = GL_RGB
+    elif image.mode == "RGBA":
+        internalFormat = GL_RGBA
+        format = GL_RGBA
+    else:
+        print("Image mode not supported.")
+        raise Exception()
+
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, image.size[0], image.size[1], 0, format, GL_UNSIGNED_BYTE, img_data)
+
+    return texture
 
 #version Modificada
 class SimpleTextureGouraudShaderProgram():
@@ -46,6 +77,7 @@ class SimpleTextureGouraudShaderProgram():
             
             void main()
             {
+                vec3 norm = normalize(mat3(transpose(inverse(model))) * normal);
                 vec3 vertexPos = vec3(model * vec4(position, 1.0));
                 gl_Position = projection * view * vec4(vertexPos, 1.0);
 
@@ -55,7 +87,6 @@ class SimpleTextureGouraudShaderProgram():
                 vec3 ambient = Ka * La;
                 
                 // diffuse 
-                vec3 norm = normalize(normal);
                 vec3 toLight = lightPosition - vertexPos;
                 vec3 lightDir = normalize(toLight);
                 float diff = max(dot(norm, lightDir), 0.0);

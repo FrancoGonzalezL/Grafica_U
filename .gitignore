@@ -1,4 +1,11 @@
 venv/
+<<<<<<< HEAD
 grafica/
 Auxiliar/mesa-boids/
 Repositorio/
+=======
+
+grafica/
+
+Auxiliar/
+>>>>>>> caa1a6c5bec3a479b17c03827e2ced466ae8541c

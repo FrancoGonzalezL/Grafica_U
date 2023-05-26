@@ -7,14 +7,10 @@ import grafo
 import objetos
 
 import numpy as np
-import libs.lighting_shaders as sh
+import libs.shaders as sh
 import libs.transformations as tr
 import libs.scene_graph as sg
 
-from libs.gpu_shape import createGPUShape
-from libs.obj_handler import read_OBJ, read_OBJ2
-from libs.assets_path import getAssetPath
-from libs.shapes import createTextureCube
 from OpenGL.GL import *
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -25,34 +21,38 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     mouse: la nave sube o baja dependiendo de la posicion y del mouse
 """
 
-WIDTH, HEIGHT = 900, 900
+#se puede modificar
+WIDTH, HEIGHT = 1100, 950
 
 class Controller(pyglet.window.Window):
-    def __init__(self, width, height, title=f"tarea2"):
+    def __init__(self, width, height, title=f"Tarea2, Franco González"):
         super().__init__(width, height, title)
         self.total_time = 0.0
         self.pipeline = sh.SimpleTextureGouraudShaderProgram()
 
-        #la dimension cambia la distancia a la camara y el tamaño de los objetos
+        #se puede modificar
+        #------------------------
+        #self.dim cambia la distancia a la camara y el tamaño de los objetos
         #mientras mas grande su valor mas pequeño se ve todo
-        self.dim = 10
+        self.dim    = 12
+        self.div    = width/height
 
         #mapa
         self.anchoMapa = 16
         self.largoMapa = 30
         
         #nave
-        self.nave_speed         = 3
-        self.nave_angular_speed = 3
+        self.nave_speed         = 3.3
+        self.nave_angular_speed = 3.3
 
         #OBJETOS
         #muros
-        self.muros_densidad   = 0.05
-        self.muros_altura_max = 10
-        self.muros_largo_max  = 4
+        self.muros_densidad   = 0.09
+        self.muros_altura_max = 12
+        self.muros_largo_max  = 2
         #meteoritos
         self.meteoritos_total = 2
-
+        #------------------------
 
 controller = Controller(width=WIDTH, height=HEIGHT)
 
@@ -110,12 +110,14 @@ def on_draw():
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "La"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ld"), 1.0, 1.0, 1.0)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ls"), 1.0, 1.0, 1.0)
-    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ka"), 0.3, 0.3, 0.3)
+    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ka"), 0.35, 0.35, 0.35)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Kd"), 0.9, 0.9, 0.9)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "Ks"), 1.0, 1.0, 1.0)
-    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "lightPosition"), camera.eye[0], camera.eye[1], camera.eye[2])
+
+    glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "lightPosition"), nave.positionX, nave.positionY + 20, nave.positionZ)
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "viewPosition"),  camera.eye[0], camera.eye[1], camera.eye[2])
     glUniform1ui(glGetUniformLocation(controller.pipeline.shaderProgram, "shininess"), 100)
+    
     glUniform1f(glGetUniformLocation(controller.pipeline.shaderProgram, "constantAttenuation"), 0.0001)
     glUniform1f(glGetUniformLocation(controller.pipeline.shaderProgram, "linearAttenuation"), 0.03)
     glUniform1f(glGetUniformLocation(controller.pipeline.shaderProgram, "quadraticAttenuation"), 0.01)

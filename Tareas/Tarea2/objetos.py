@@ -5,11 +5,12 @@ from libs.scene_graph import findNode
 class Camera:
     def __init__(self,controller, width , height,):
         dim = controller.dim
+        div = controller.div
         self.eye = np.array([-dim, dim, dim])
         self.at  = np.array([ 0.0, 0.0, 0.0])
         self.up  = np.array([ 0.0, 1.0, 0.0])
 
-        self.projection = tr.ortho(-dim, dim, -dim, dim, 0.1, 100)
+        self.projection = tr.ortho(-dim*div, dim*div, -dim, dim, 0.1, 100)
         self.view = tr.lookAt(self.eye, self.at, self.up)
 
     def update(self, controller, nave):
@@ -113,7 +114,7 @@ class Meteoritos:
         self.meteoritos = np.zeros((total,9),dtype=float)
         for i in range(total):
             self.meteoritos[i][0] = (0.5-np.random.random())*controller.largoMapa #X
-            self.meteoritos[i][1] = 30                                            #Y
+            self.meteoritos[i][1] = np.random.randint(20,50)                                       #Y
             self.meteoritos[i][2] = (0.5-np.random.random())*controller.anchoMapa #Z
 
             self.meteoritos[i][3] = (0.5-np.random.random())*3     #SpeedX
@@ -130,7 +131,7 @@ class Meteoritos:
 
             if self.meteoritos[i][1] < -1: 
                 self.meteoritos[i][0]  = (0.5-np.random.random())*controller.largoMapa
-                self.meteoritos[i][1]  = 100
+                self.meteoritos[i][1]  = np.random.randint(70,120)
                 self.meteoritos[i][2]  = (0.5-np.random.random())*controller.anchoMapa
             else:                 
                 self.meteoritos[i][1] += dt*self.meteoritos[i][4]
