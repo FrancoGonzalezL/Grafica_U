@@ -85,24 +85,29 @@ def on_key_press(symbol, modifiers):
     if symbol == pyglet.window.key.ESCAPE:
         controller.close()
 
-    ruta.actualizar(nave,controller.total_time)
     if symbol == pyglet.window.key.W:
+        ruta.reprod = False
         nave.speed =  1
     elif symbol == pyglet.window.key.S:
+        ruta.reprod = False
         nave.speed = -1
     elif symbol == pyglet.window.key.A:
+        ruta.reprod = False
         nave.angular_speed = -1
     elif symbol == pyglet.window.key.D:
+        ruta.reprod = False
         nave.angular_speed =  1
 
     if symbol == pyglet.window.key.R:
         ruta.iniciar_grabacion(nave,controller.total_time)
     if symbol == pyglet.window.key.V:
-        ruta.show = not ruta.show
+        ruta.dibujar = not ruta.dibujar
+    if symbol == pyglet.window.key._1:
+        ruta.reproducir(nave,True)
+    
 
 @controller.event
 def on_key_release(symbol, modifiers):
-    ruta.actualizar(nave,controller.total_time)
     if   symbol == pyglet.window.key.W:
         nave.speed = 0
     elif symbol == pyglet.window.key.S:
@@ -114,6 +119,7 @@ def on_key_release(symbol, modifiers):
 
 @controller.event
 def on_mouse_motion(x, y, dx, dy): 
+    if ruta.reprod: return
     nave.phi = (y/HEIGHT-1)*np.pi/2 + (y/HEIGHT)*np.pi/2
 
 
@@ -122,6 +128,8 @@ def on_draw():
     controller.clear()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
+    ruta.reproducir(nave)
+
     camera.update(controller, nave)
 
     glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "lightPosition"), nave.positionX, nave.positionY + 20, nave.positionZ)

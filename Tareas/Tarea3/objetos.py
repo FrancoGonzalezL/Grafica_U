@@ -7,6 +7,26 @@ from libs.gpu_shape import createGPUShape
 from libs.shaders import textureSimpleSetup
 from OpenGL.GL import *
 
+def generateT(t):
+    return np.array([[1, t, t**2, t**3]]).T
+def hermiteMatrix(P1, P2, T1, T2):
+    G = np.concatenate((P1, P2, T1, T2), axis=1)
+    Mh = np.array([[1, 0, -3, 2], [0, 0, 3, -2], [0, 1, -2, 1], [0, 0, -1, 1]])
+    return np.matmul(G, Mh)
+def bezierMatrix(P0, P1, P2, P3):
+    G = np.concatenate((P0, P1, P2, P3), axis=1)
+    Mb = np.array([[1, -3, 3, -1], [0, 3, -6, 3], [0, 0, 3, -3], [0, 0, 0, 1]])
+    return np.matmul(G, Mb)
+def evalCurve(M, N):
+    ts = np.linspace(0.0, 1.0, N)
+    curve = np.ndarray(shape=(N, 3), dtype=float)
+    for i in range(len(ts)):
+        T = generateT(ts[i])
+        curve[i, 0:3] = np.matmul(M, T).T
+    return curve
+
+
+
 class Camera:
     def __init__(self,controller, width , height,):
         dim = controller.dim
@@ -45,11 +65,11 @@ class Nave:
     def update(self,controller,grafo,dt):
         speed = self.speed*self.max_speed
         angular_speed = self.angular_speed*self.max_angular_speed
-        self.theta     += dt*angular_speed*np.pi/8
-        self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
-        self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
-        self.positionY += dt*speed*np.sin(self.phi)
+        self.theta += dt*angular_speed*np.pi/8
 
+        self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
+        self.positionY += dt*speed*np.sin(self.phi)
+        self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
 
         naves = findNode(grafo,"escuadron")
         naves.transform = tr.translate(self.positionX,
@@ -73,39 +93,93 @@ class Ruta:
     def __init__(self,pipeline):
         self.ruta = []
         self.tiempo = []
-        self.direccion = []
+        self.dir = []
 
         self.cubo = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
         self.cubo.texture = textureSimpleSetup(getAssetPath("RED.png"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
-        self.grabar = False
-        self.show   = False
+
+        self.cubo2 = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
+        self.cubo2.texture = textureSimpleSetup(getAssetPath("BLUE.jpg"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
+
+        self.grabar  = False
+        self.dibujar = False
+        self.reprod  = False
+        self.N       = 0
+        self.HermiteCurve = np.zeros((0,3))
+        self.dirHermiteCurve = np.zeros((0,3))
 
     def iniciar_grabacion(self,nave,time):
+        self.N = 0
+        self.reprod = False
         self.grabar = True
         self.ruta = [[nave.positionX,nave.positionY,nave.positionZ]]
         self.tiempo = [time]
-        self.direccion = [[nave.theta,nave.phi]]
-        self.print()
+        self.dir = [[nave.theta,nave.phi]]
+        self.HermiteCurve = np.zeros((0,3))
+        self.dirHermiteCurve = np.zeros((0,3))
 
     def actualizar(self,nave,time):
-        if self.grabar:
-            self.ruta.append([nave.positionX,nave.positionY,nave.positionZ])
-            self.tiempo.append(time)
-            self.direccion.append([nave.theta,nave.phi])
-            self.print()
+        self.ruta.append([nave.positionX,nave.positionY,nave.positionZ])
+        self.tiempo.append(time)
+        self.dir.append([nave.theta,nave.phi])
+        self.estado()
+        
+        if len(self.ruta)>2:
+            ref = 60
+            #posiciones
+            P1 = np.array([[self.ruta[-3][0], self.ruta[-3][1], self.ruta[-3][2]]]).T
+            P2 = np.array([[self.ruta[-2][0], self.ruta[-2][1], self.ruta[-2][2]]]).T
+            tan = nave.speed*np.sqrt(np.square(self.ruta[-2][0]-self.ruta[-3][0])+np.square(self.ruta[-2][1]-self.ruta[-3][1])+np.square(self.ruta[-2][2]-self.ruta[-3][2]))
+            T1 = np.array([[tan*np.cos(self.dir[-3][0])*np.cos(self.dir[-2][1]),
+                            tan*np.sin(self.dir[-3][1]),
+                            tan*np.sin(self.dir[-3][0])*np.cos(self.dir[-3][1])]]).T
+            T2 = np.array([[tan*np.cos(self.dir[-2][0])*np.cos(self.dir[-2][1]),
+                            tan*np.sin(self.dir[-2][1]),
+                            tan*np.sin(self.dir[-2][0])*np.cos(self.dir[-2][1])]]).T
+            GMh = hermiteMatrix(P1, P2, T1, T2)
+            HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-2]-self.tiempo[-3])))
+            self.HermiteCurve = np.concatenate((self.HermiteCurve,HermiteCurve),axis=0)
+            #direcciones
+            P1 = np.array([[self.dir[-3][0], self.dir[-3][1], 0.0]]).T
+            P2 = np.array([[self.dir[-2][0], self.dir[-2][1], 0.0]]).T
+            T1 = np.array([[self.dir[-2][0]-self.dir[-3][0],self.dir[-2][1]-self.dir[-3][1], 0.0]]).T
+            T2 = np.array([[self.dir[-1][0]-self.dir[-2][0],self.dir[-1][1]-self.dir[-2][1], 0.0]]).T
+            GMh = hermiteMatrix(P1, P2, T1, T2)
+            HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-2]-self.tiempo[-3])))
+            self.dirHermiteCurve = np.concatenate((self.dirHermiteCurve,HermiteCurve),axis=0)
 
-    def print(self):
+    def reproducir(self,nave,iniciar = False):
+        if iniciar and len(self.HermiteCurve)>0:
+            self.reprod = True
+            self.grabar = False
+        if self.reprod:
+            if self.N>len(self.HermiteCurve)-1: self.N = 0
+            nave.positionX = self.HermiteCurve[self.N][0]
+            nave.positionY = self.HermiteCurve[self.N][1]
+            nave.positionZ = self.HermiteCurve[self.N][2]
+            nave.theta     = self.dirHermiteCurve[self.N][0]
+            nave.phi       = self.dirHermiteCurve[self.N][1]
+            self.N+=1
+
+    def estado(self):
         if len(self.ruta)!=0:
             print("punto agregado: ",self.ruta[-1],end=", ")
-            print("orientacion:", self.direccion[-1],end=", ")
+            print("orientacion:", self.dir[-1],end=", ")
             print("total de puntos: ", len(self.ruta))
+
     def draw(self,pipeline):
-        if self.show:
+        if self.dibujar:
             for posicion in self.ruta:
                 model = tr.matmul([tr.translate(posicion[0],posicion[1],posicion[2]),
                                 tr.uniformScale(0.2)])
                 glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
                 pipeline.drawCall(self.cubo)
+            for i,pos in enumerate(self.HermiteCurve):
+                if i%2==0:
+                    model = tr.matmul([tr.translate(pos[0],pos[1],pos[2]),
+                                    tr.uniformScale(0.05)])
+                    glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
+                    pipeline.drawCall(self.cubo2)
 
 #Este Grupo solo da vueltas
 class Obstaculos:
