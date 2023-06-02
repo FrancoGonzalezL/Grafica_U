@@ -6,6 +6,9 @@ from libs.assets_path import getAssetPath
 from libs.gpu_shape import createGPUShape
 from libs.shaders import textureSimpleSetup
 from OpenGL.GL import *
+from itertools import chain
+
+import pyglet
 
 def generateT(t):
     return np.array([[1, t, t**2, t**3]]).T
@@ -31,22 +34,40 @@ class Camera:
     def __init__(self,controller, width , height,):
         dim = controller.dim
         div = controller.div
-        self.eye = np.array([-dim, dim, dim])
-        self.at  = np.array([ 0.0, 0.0, 0.0])
-        self.up  = np.array([ 0.0, 1.0, 0.0])
+        self.projections = [
+                tr.perspective(60, float(width)/float(height), 0.1, 100),
+                tr.ortho(-dim*div, dim*div, -dim, dim, 0.1, 100)
+                ]
+        self.n_project  = 1
+        self.projection = self.projections[self.n_project]
 
-        self.projection = tr.ortho(-dim*div, dim*div, -dim, dim, 0.1, 100)
-        self.view = tr.lookAt(self.eye, self.at, self.up)
+        self.eye = np.array([-dim, dim, dim])
+        at  = np.array([ 0.0, 0.0, 0.0])
+        up  = np.array([ 0.0, 1.0, 0.0])
+        self.view = tr.lookAt(self.eye, at, up)
 
     def update(self, controller, nave):
-        #mirar siempre desde una de las esquinas del cubo
-        self.eye = np.array([nave.positionX - controller.dim,
-                             nave.positionY + controller.dim,
-                             nave.positionZ + controller.dim])
-        self.at  = np.array([nave.positionX,
-                             nave.positionY,
-                             nave.positionZ])
-        self.view = tr.lookAt(self.eye, self.at, self.up)
+        if self.n_project == 0:
+            posicion_nave = [nave.positionX,nave.positionY,nave.positionZ,1]
+
+            eye  = tr.matmul([tr.translate(-2.0,0.0,0.0),
+                              tr.translate(nave.positionX,nave.positionY,nave.positionZ),
+                              tr.rotationY(-nave.theta),
+                              np.array([0.0,0.0,0.0,1.0])])
+
+            self.eye = np.array(eye[0:3])
+
+            #at = tr.matmul([tr.rotationY(-nave.theta),posicion_nave])
+
+            self.view = tr.lookAt(self.eye, np.array(posicion_nave[0:3]), np.array([0.8, 1.0, 0.0]))
+
+        else:
+            #mirar siempre desde una de las esquinas del cubo
+            self.eye = np.array([nave.positionX - controller.dim,
+                                nave.positionY + controller.dim,
+                                nave.positionZ + controller.dim])
+            at  = np.array([nave.positionX,nave.positionY,nave.positionZ])
+            self.view = tr.lookAt(self.eye, at, np.array([0.0,1.0,0.0]))
 
 class Nave:
     def __init__(self,max_speed,max_angular_speed):
@@ -94,12 +115,15 @@ class Ruta:
         self.ruta = []
         self.tiempo = []
         self.dir = []
+        self.ruta_data = None
 
-        self.cubo = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
-        self.cubo.texture = textureSimpleSetup(getAssetPath("RED.png"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
+        self.lines = True
 
-        self.cubo2 = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
-        self.cubo2.texture = textureSimpleSetup(getAssetPath("BLUE.jpg"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
+        #self.cubo = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
+        #self.cubo.texture = textureSimpleSetup(getAssetPath("RED.png"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
+#
+        #self.cubo2 = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
+        #self.cubo2.texture = textureSimpleSetup(getAssetPath("BLUE.jpg"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
 
         self.grabar  = False
         self.dibujar = False
@@ -143,7 +167,9 @@ class Ruta:
             P1 = np.array([[self.dir[-3][0], self.dir[-3][1], 0.0]]).T
             P2 = np.array([[self.dir[-2][0], self.dir[-2][1], 0.0]]).T
             T1 = np.array([[self.dir[-2][0]-self.dir[-3][0],self.dir[-2][1]-self.dir[-3][1], 0.0]]).T
+            #T1 = np.array([[np.tan(self.dir[-3][0]), np.tan(self.dir[-3][1]), 0.0]]).T
             T2 = np.array([[self.dir[-1][0]-self.dir[-2][0],self.dir[-1][1]-self.dir[-2][1], 0.0]]).T
+            #T2 = np.array([[np.tan(self.dir[-2][0]),np.tan(self.dir[-2][1]), 0.0]]).T
             GMh = hermiteMatrix(P1, P2, T1, T2)
             HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-2]-self.tiempo[-3])))
             self.dirHermiteCurve = np.concatenate((self.dirHermiteCurve,HermiteCurve),axis=0)
@@ -169,17 +195,51 @@ class Ruta:
 
     def draw(self,pipeline):
         if self.dibujar:
-            for posicion in self.ruta:
-                model = tr.matmul([tr.translate(posicion[0],posicion[1],posicion[2]),
-                                tr.uniformScale(0.2)])
-                glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
-                pipeline.drawCall(self.cubo)
-            for i,pos in enumerate(self.HermiteCurve):
-                if i%2==0:
-                    model = tr.matmul([tr.translate(pos[0],pos[1],pos[2]),
-                                    tr.uniformScale(0.05)])
-                    glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
-                    pipeline.drawCall(self.cubo2)
+
+            if self.lines and len(self.HermiteCurve) > 1:
+
+                self.ruta_data = pipeline.vertex_list_indexed(
+                len(self.HermiteCurve),
+                pyglet.gl.GL_LINES,
+                tuple(chain(*([i,i+1] for i in range(len(self.HermiteCurve)-1)))),
+                position="f",
+                )
+                self.ruta_data.position[:] = tuple(
+                    chain(*((self.HermiteCurve[i][0], self.HermiteCurve[i][1], self.HermiteCurve[i][2]) for i in range(len(self.HermiteCurve))))
+                    )
+                modo = pyglet.gl.GL_LINES
+
+
+            elif not self.lines and len(self.ruta) > 0:
+                self.ruta_data = pipeline.vertex_list(
+                    len(self.ruta), pyglet.gl.GL_POINTS, position="f"
+                    )
+                self.ruta_data.position[:] = tuple(
+                    chain(*((p[0],p[1],p[2]) for p in self.ruta))
+                    )
+                modo = pyglet.gl.GL_POINTS
+                glEnable(GL_PROGRAM_POINT_SIZE)
+
+            pipeline.use()
+            if self.ruta_data is not None:
+                self.ruta_data.draw(modo)
+
+            if self.ruta_data is not None:
+                self.ruta_data.delete()
+                self.ruta_data = None
+
+            #for posicion in self.ruta:
+            #    model = tr.matmul([tr.translate(posicion[0],posicion[1],posicion[2]),
+            #                    tr.uniformScale(0.2)])
+            #    glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
+            #    pipeline.drawCall(self.cubo)
+
+            #for i,pos in enumerate(self.HermiteCurve):
+            #    if i%2==0:
+            #        model = tr.matmul([tr.translate(pos[0],pos[1],pos[2]),
+            #                        tr.uniformScale(0.05)])
+            #        glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
+            #        pipeline.drawCall(self.cubo2)
 
 #Este Grupo solo da vueltas
 class Obstaculos:
