@@ -136,7 +136,7 @@ def grafo(controller,pipeline,muros,meteorit):
     for i in range(len(muros.posiciones)):
         murosL[i] = SceneGraphNode("pilar"+str(i))
         murosL[i].transform = tr.matmul([tr.translate(muros.posiciones[i][0]-controller.largoMapa/2,
-                                                      2.0,
+                                                      1.0,
                                                       muros.posiciones[i][1]-controller.anchoMapa/2),
                                         tr.scale(1.0, muros.posiciones[i][2], muros.posiciones[i][3])])
         murosL[i].childs += [gpuMuro[i]]

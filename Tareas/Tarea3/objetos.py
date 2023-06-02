@@ -48,18 +48,20 @@ class Camera:
 
     def update(self, controller, nave):
         if self.n_project == 0:
-            posicion_nave = [nave.positionX,nave.positionY,nave.positionZ,1]
+            nave_pos = [nave.positionX,nave.positionY,nave.positionZ,1]
 
-            eye  = tr.matmul([tr.translate(-2.0,0.0,0.0),
-                              tr.translate(nave.positionX,nave.positionY,nave.positionZ),
-                              tr.rotationY(-nave.theta),
-                              np.array([0.0,0.0,0.0,1.0])])
-
+            eye  = tr.matmul([ tr.translate(nave_pos[0],nave_pos[1],nave_pos[2]),
+                               tr.rotationY(-nave.theta),
+                               tr.translate(-5.0,2-5*np.sin(nave.phi),0.0),
+                               [0.0,0.0,0.0,1.0]])
             self.eye = np.array(eye[0:3])
 
-            #at = tr.matmul([tr.rotationY(-nave.theta),posicion_nave])
+            up = tr.matmul([tr.rotationZ(nave.phi),
+                            [0.0,1.0,0.0,1.0]])
 
-            self.view = tr.lookAt(self.eye, np.array(posicion_nave[0:3]), np.array([0.8, 1.0, 0.0]))
+            self.view = tr.lookAt(self.eye,
+                                  np.array(nave_pos[0:3]),
+                                  np.array([0.0,1.0,0.0]))
 
         else:
             #mirar siempre desde una de las esquinas del cubo
@@ -121,7 +123,7 @@ class Ruta:
 
         #self.cubo = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
         #self.cubo.texture = textureSimpleSetup(getAssetPath("RED.png"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
-#
+
         #self.cubo2 = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
         #self.cubo2.texture = textureSimpleSetup(getAssetPath("BLUE.jpg"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
 
@@ -149,7 +151,7 @@ class Ruta:
         self.estado()
         
         if len(self.ruta)>2:
-            ref = 60
+            ref = 60  
             #posiciones
             P1 = np.array([[self.ruta[-3][0], self.ruta[-3][1], self.ruta[-3][2]]]).T
             P2 = np.array([[self.ruta[-2][0], self.ruta[-2][1], self.ruta[-2][2]]]).T
@@ -176,6 +178,7 @@ class Ruta:
 
     def reproducir(self,nave,iniciar = False):
         if iniciar and len(self.HermiteCurve)>0:
+            self.N = 0
             self.reprod = True
             self.grabar = False
         if self.reprod:
@@ -185,6 +188,7 @@ class Ruta:
             nave.positionZ = self.HermiteCurve[self.N][2]
             nave.theta     = self.dirHermiteCurve[self.N][0]
             nave.phi       = self.dirHermiteCurve[self.N][1]
+            print(nave.positionX,nave.positionY,nave.positionZ)
             self.N+=1
 
     def estado(self):

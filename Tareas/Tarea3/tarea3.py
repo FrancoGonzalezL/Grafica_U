@@ -22,7 +22,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     A,D: para girar (izquierda, derecha)
     mouse: la nave sube o baja dependiendo de la posicion del mouse
 """
-#se puede modificar
 
 class Controller(pyglet.window.Window):
     def __init__(self, width, height, title=f"Tarea3, Franco González"):
@@ -55,16 +54,16 @@ class Controller(pyglet.window.Window):
         self.nave_angular_speed = 3.3
         #OBJETOS
         #muros
-        self.muros_densidad   = 0.09
-        self.muros_altura_max = 12
-        self.muros_largo_max  = 2
+        self.muros_densidad   = 0.01
+        self.muros_altura_max = 1
+        self.muros_largo_max  = 1
         #meteoritos
-        self.meteoritos_total = 2
+        self.meteoritos_total = 0
         #------------------------
 
 if __name__ == '__main__':
 
-    WIDTH, HEIGHT = 1100, 950
+    WIDTH, HEIGHT = 1000, 700
     controller = Controller(width=WIDTH, height=HEIGHT)
     camera = objetos.Camera(controller, WIDTH, HEIGHT)
 
@@ -117,7 +116,7 @@ if __name__ == '__main__':
 
         if symbol == pyglet.window.key.L:
             ruta.lines = not ruta.lines
-        if symbol == pyglet.window.key.Z:
+        if symbol == pyglet.window.key.C:
             camera.n_project = (camera.n_project+1)%2
             camera.projection = camera.projections[camera.n_project]
         if symbol == pyglet.window.key.R:
@@ -148,13 +147,13 @@ if __name__ == '__main__':
     @controller.event
     def on_draw():
         controller.clear()
-
-
         glUseProgram(controller.pipeline.shaderProgram)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
+        #reproduce la trayectoria grabada
         ruta.reproducir(nave)
 
+        #actualiza camara con la posicion de la nave
         camera.update(controller, nave)
 
         glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "lightPosition"), nave.positionX, nave.positionY + 20, nave.positionZ)
@@ -164,6 +163,7 @@ if __name__ == '__main__':
 
         sg.drawSceneGraphNode(escena, controller.pipeline, "model")
 
+        #dibujo de la curva
         controller.pipeline2["projection"] = camera.projection.reshape(16, 1, order="F")
         controller.pipeline2["view"] = camera.view.reshape(16, 1, order="F")
         ruta.draw(controller.pipeline2)
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         meteoritos.update(controller,escena,dt)
         for obstaculo in obstaculos:
             obstaculo.update(controller,escena, dt)
-        if ruta.grabar and ((controller.total_time - ruta.tiempo[-1]) > 1):
+        if ruta.grabar and ((controller.total_time - ruta.tiempo[-1]) >= 1):
             ruta.actualizar(nave,controller.total_time)
 
     pyglet.clock.schedule(update, controller, nave, obstaculos,meteoritos, escena, ruta)
