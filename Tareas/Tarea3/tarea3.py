@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
 
     nave = objetos.Nave(controller.nave_speed, controller.nave_angular_speed)
-    ruta = objetos.Ruta(controller.pipeline)
+    ruta = objetos.Ruta()
     muros = objetos.MurosMapa(controller, controller.muros_densidad, controller.muros_altura_max, controller.muros_largo_max)
     meteoritos = objetos.Meteoritos(controller, "meteorito", controller.meteoritos_total)
     obstaculos = np.array([objetos.Obstaculos(controller,"among1", 0.5),
@@ -101,19 +101,6 @@ if __name__ == '__main__':
         if symbol == pyglet.window.key.ESCAPE:
             controller.close()
 
-        if symbol == pyglet.window.key.W:
-            ruta.reprod = False
-            nave.speed =  1
-        elif symbol == pyglet.window.key.S:
-            ruta.reprod = False
-            nave.speed = -1
-        elif symbol == pyglet.window.key.A:
-            ruta.reprod = False
-            nave.angular_speed = -1
-        elif symbol == pyglet.window.key.D:
-            ruta.reprod = False
-            nave.angular_speed =  1
-
         if symbol == pyglet.window.key.L:
             ruta.lines = not ruta.lines
         if symbol == pyglet.window.key.C:
@@ -124,12 +111,25 @@ if __name__ == '__main__':
         if symbol == pyglet.window.key.V:
             ruta.dibujar = not ruta.dibujar
         if symbol == pyglet.window.key._1:
-            ruta.reproducir(nave,True)
+            ruta.N = 0
+            ruta.reprod = not ruta.reprod
+            ruta.grabar = False
+            
+        if ruta.reprod: return
+        elif symbol == pyglet.window.key.W:
+            nave.speed =  1
+        elif symbol == pyglet.window.key.S:
+            nave.speed = -1
+        elif symbol == pyglet.window.key.A:
+            nave.angular_speed = -1
+        elif symbol == pyglet.window.key.D:
+            nave.angular_speed =  1
         
 
     @controller.event
     def on_key_release(symbol, modifiers):
-        if   symbol == pyglet.window.key.W:
+        if ruta.reprod: return
+        elif   symbol == pyglet.window.key.W:
             nave.speed = 0
         elif symbol == pyglet.window.key.S:
             nave.speed = 0
@@ -149,12 +149,13 @@ if __name__ == '__main__':
         controller.clear()
         glUseProgram(controller.pipeline.shaderProgram)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        
+
         #reproduce la trayectoria grabada
-        ruta.reproducir(nave)
+        ruta.reproducir(nave,escena)
 
         #actualiza camara con la posicion de la nave
         camera.update(controller, nave)
+        
 
         glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "lightPosition"), nave.positionX, nave.positionY + 20, nave.positionZ)
         glUniform3f(glGetUniformLocation(controller.pipeline.shaderProgram, "viewPosition"),  camera.eye[0], camera.eye[1], camera.eye[2])
@@ -166,12 +167,13 @@ if __name__ == '__main__':
         #dibujo de la curva
         controller.pipeline2["projection"] = camera.projection.reshape(16, 1, order="F")
         controller.pipeline2["view"] = camera.view.reshape(16, 1, order="F")
+        
         ruta.draw(controller.pipeline2)
 
 
     def update(dt,controller, nave, obstaculos, meteoritos, escena, ruta):
         controller.total_time += dt
-        nave.update(controller, escena, dt)
+        nave.update(escena, dt, True)
         meteoritos.update(controller,escena,dt)
         for obstaculo in obstaculos:
             obstaculo.update(controller,escena, dt)

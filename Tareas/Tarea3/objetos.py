@@ -85,14 +85,15 @@ class Nave:
         self.max_speed = max_speed
         self.max_angular_speed = max_angular_speed
 
-    def update(self,controller,grafo,dt):
-        speed = self.speed*self.max_speed
-        angular_speed = self.angular_speed*self.max_angular_speed
-        self.theta += dt*angular_speed*np.pi/8
+    def update(self,grafo,dt=0,move=False):
+        if move:
+            speed = self.speed*self.max_speed
+            angular_speed = self.angular_speed*self.max_angular_speed
+            self.theta += dt*angular_speed*np.pi/8
 
-        self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
-        self.positionY += dt*speed*np.sin(self.phi)
-        self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
+            self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
+            self.positionY += dt*speed*np.sin(self.phi)
+            self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
 
         naves = findNode(grafo,"escuadron")
         naves.transform = tr.translate(self.positionX,
@@ -113,7 +114,7 @@ class Nave:
                                       tr.rotationY(np.pi/2), tr.uniformScale(0.2)])
 
 class Ruta:
-    def __init__(self,pipeline):
+    def __init__(self):
         self.ruta = []
         self.tiempo = []
         self.dir = []
@@ -176,19 +177,15 @@ class Ruta:
             HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-2]-self.tiempo[-3])))
             self.dirHermiteCurve = np.concatenate((self.dirHermiteCurve,HermiteCurve),axis=0)
 
-    def reproducir(self,nave,iniciar = False):
-        if iniciar and len(self.HermiteCurve)>0:
-            self.N = 0
-            self.reprod = True
-            self.grabar = False
-        if self.reprod:
+    def reproducir(self,nave,grafo):
+        if self.reprod and len(self.HermiteCurve)>0:
             if self.N>len(self.HermiteCurve)-1: self.N = 0
-            nave.positionX = self.HermiteCurve[self.N][0]
-            nave.positionY = self.HermiteCurve[self.N][1]
-            nave.positionZ = self.HermiteCurve[self.N][2]
-            nave.theta     = self.dirHermiteCurve[self.N][0]
-            nave.phi       = self.dirHermiteCurve[self.N][1]
-            print(nave.positionX,nave.positionY,nave.positionZ)
+            nave.positionX = round(self.HermiteCurve[self.N][0],5)
+            nave.positionY = round(self.HermiteCurve[self.N][1],5)
+            nave.positionZ = round(self.HermiteCurve[self.N][2],5)
+            nave.theta     = round(self.dirHermiteCurve[self.N][0],5)
+            nave.phi       = round(self.dirHermiteCurve[self.N][1],5)
+            nave.update(grafo)
             self.N+=1
 
     def estado(self):
