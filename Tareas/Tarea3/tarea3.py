@@ -107,7 +107,7 @@ if __name__ == '__main__':
             camera.n_project = (camera.n_project+1)%2
             camera.projection = camera.projections[camera.n_project]
         if symbol == pyglet.window.key.R:
-            ruta.iniciar_grabacion(nave,controller.total_time)
+            ruta.grabar(nave,controller.total_time)
         if symbol == pyglet.window.key.V:
             ruta.dibujar = not ruta.dibujar
         if symbol == pyglet.window.key._1:
@@ -171,14 +171,12 @@ if __name__ == '__main__':
         ruta.draw(controller.pipeline2)
 
 
-    def update(dt,controller, nave, obstaculos, meteoritos, escena, ruta):
+    def update(dt,controller, nave, obstaculos, meteoritos, escena):
         controller.total_time += dt
-        nave.update(escena, dt, True)
+        nave.update(escena, dt)
         meteoritos.update(controller,escena,dt)
         for obstaculo in obstaculos:
             obstaculo.update(controller,escena, dt)
-        if ruta.grabar and ((controller.total_time - ruta.tiempo[-1]) >= 1):
-            ruta.actualizar(nave,controller.total_time)
 
-    pyglet.clock.schedule(update, controller, nave, obstaculos,meteoritos, escena, ruta)
+    pyglet.clock.schedule(update, controller, nave, obstaculos,meteoritos, escena)
     pyglet.app.run(1/60)

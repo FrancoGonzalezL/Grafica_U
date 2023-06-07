@@ -85,15 +85,14 @@ class Nave:
         self.max_speed = max_speed
         self.max_angular_speed = max_angular_speed
 
-    def update(self,grafo,dt=0,move=False):
-        if move:
-            speed = self.speed*self.max_speed
-            angular_speed = self.angular_speed*self.max_angular_speed
-            self.theta += dt*angular_speed*np.pi/8
+    def update(self,grafo,dt=0):
+        speed = self.speed*self.max_speed
+        angular_speed = self.angular_speed*self.max_angular_speed
+        self.theta += dt*angular_speed*np.pi/8
 
-            self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
-            self.positionY += dt*speed*np.sin(self.phi)
-            self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
+        self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
+        self.positionY += dt*speed*np.sin(self.phi)
+        self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
 
         naves = findNode(grafo,"escuadron")
         naves.transform = tr.translate(self.positionX,
@@ -128,63 +127,68 @@ class Ruta:
         #self.cubo2 = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
         #self.cubo2.texture = textureSimpleSetup(getAssetPath("BLUE.jpg"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
 
-        self.grabar  = False
         self.dibujar = False
         self.reprod  = False
         self.N       = 0
         self.HermiteCurve = np.zeros((0,3))
-        self.dirHermiteCurve = np.zeros((0,3))
+    
+        self.a = []
 
-    def iniciar_grabacion(self,nave,time):
-        self.N = 0
-        self.reprod = False
-        self.grabar = True
-        self.ruta = [[nave.positionX,nave.positionY,nave.positionZ]]
-        self.tiempo = [time]
-        self.dir = [[nave.theta,nave.phi]]
-        self.HermiteCurve = np.zeros((0,3))
-        self.dirHermiteCurve = np.zeros((0,3))
-
-    def actualizar(self,nave,time):
+    def grabar(self,nave,time):
         self.ruta.append([nave.positionX,nave.positionY,nave.positionZ])
         self.tiempo.append(time)
         self.dir.append([nave.theta,nave.phi])
         self.estado()
         
-        if len(self.ruta)>2:
-            ref = 60  
+        if len(self.ruta) > 1:
+            ref = 60
             #posiciones
-            P1 = np.array([[self.ruta[-3][0], self.ruta[-3][1], self.ruta[-3][2]]]).T
-            P2 = np.array([[self.ruta[-2][0], self.ruta[-2][1], self.ruta[-2][2]]]).T
-            tan = nave.speed*np.sqrt(np.square(self.ruta[-2][0]-self.ruta[-3][0])+np.square(self.ruta[-2][1]-self.ruta[-3][1])+np.square(self.ruta[-2][2]-self.ruta[-3][2]))
-            T1 = np.array([[tan*np.cos(self.dir[-3][0])*np.cos(self.dir[-2][1]),
-                            tan*np.sin(self.dir[-3][1]),
-                            tan*np.sin(self.dir[-3][0])*np.cos(self.dir[-3][1])]]).T
-            T2 = np.array([[tan*np.cos(self.dir[-2][0])*np.cos(self.dir[-2][1]),
+            P1 = np.array([[self.ruta[-2][0], self.ruta[-2][1], self.ruta[-2][2]]]).T
+            P2 = np.array([[self.ruta[-1][0], self.ruta[-1][1], self.ruta[-1][2]]]).T
+            tan = nave.speed*np.sqrt(np.square(self.ruta[-1][0]-self.ruta[-2][0])+np.square(self.ruta[-1][1]-self.ruta[-2][1])+np.square(self.ruta[-1][2]-self.ruta[-2][2]))
+            T1 = np.array([[tan*np.cos(self.dir[-2][0])*np.cos(self.dir[-2][1]),
                             tan*np.sin(self.dir[-2][1]),
                             tan*np.sin(self.dir[-2][0])*np.cos(self.dir[-2][1])]]).T
+            T2 = np.array([[tan*np.cos(self.dir[-1][0])*np.cos(self.dir[-1][1]),
+                            tan*np.sin(self.dir[-1][1]),
+                            tan*np.sin(self.dir[-1][0])*np.cos(self.dir[-1][1])]]).T
             GMh = hermiteMatrix(P1, P2, T1, T2)
-            HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-2]-self.tiempo[-3])))
+            HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-1]-self.tiempo[-2])))
             self.HermiteCurve = np.concatenate((self.HermiteCurve,HermiteCurve),axis=0)
-            #direcciones
-            P1 = np.array([[self.dir[-3][0], self.dir[-3][1], 0.0]]).T
-            P2 = np.array([[self.dir[-2][0], self.dir[-2][1], 0.0]]).T
-            T1 = np.array([[self.dir[-2][0]-self.dir[-3][0],self.dir[-2][1]-self.dir[-3][1], 0.0]]).T
-            #T1 = np.array([[np.tan(self.dir[-3][0]), np.tan(self.dir[-3][1]), 0.0]]).T
-            T2 = np.array([[self.dir[-1][0]-self.dir[-2][0],self.dir[-1][1]-self.dir[-2][1], 0.0]]).T
-            #T2 = np.array([[np.tan(self.dir[-2][0]),np.tan(self.dir[-2][1]), 0.0]]).T
-            GMh = hermiteMatrix(P1, P2, T1, T2)
-            HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-2]-self.tiempo[-3])))
-            self.dirHermiteCurve = np.concatenate((self.dirHermiteCurve,HermiteCurve),axis=0)
+
+            self.a.append(len(self.HermiteCurve)-1)
 
     def reproducir(self,nave,grafo):
         if self.reprod and len(self.HermiteCurve)>0:
-            if self.N>len(self.HermiteCurve)-1: self.N = 0
-            nave.positionX = round(self.HermiteCurve[self.N][0],5)
-            nave.positionY = round(self.HermiteCurve[self.N][1],5)
-            nave.positionZ = round(self.HermiteCurve[self.N][2],5)
-            nave.theta     = round(self.dirHermiteCurve[self.N][0],5)
-            nave.phi       = round(self.dirHermiteCurve[self.N][1],5)
+            if self.N > len(self.HermiteCurve)-2: self.N = 0
+            nave.positionX = self.HermiteCurve[self.N][0]
+            nave.positionY = self.HermiteCurve[self.N][1]
+            nave.positionZ = self.HermiteCurve[self.N][2]
+
+            if self.N in self.a:#evita errores entre las curvas
+                a = np.arctan2(self.HermiteCurve[self.N+2][2] - self.HermiteCurve[self.N+1][2],
+                              self.HermiteCurve[self.N+2][0] - self.HermiteCurve[self.N+1][0]) 
+                b = np.arctan2(self.HermiteCurve[self.N][2] - self.HermiteCurve[self.N-1][2],
+                              self.HermiteCurve[self.N][0] - self.HermiteCurve[self.N-1][0])
+                nave.theta = (a+b)*0.5
+
+                dist = np.sqrt((self.HermiteCurve[self.N+2][0]-self.HermiteCurve[self.N+1][0])**2 + \
+                            (self.HermiteCurve[self.N+2][2]-self.HermiteCurve[self.N+1][2])**2)
+                a = np.arctan2(self.HermiteCurve[self.N+2][1] - self.HermiteCurve[self.N+1][1],dist)
+                dist = np.sqrt((self.HermiteCurve[self.N][0]-self.HermiteCurve[self.N-1][0])**2 + \
+                            (self.HermiteCurve[self.N][2]-self.HermiteCurve[self.N-1][2])**2)
+                b = np.arctan2(self.HermiteCurve[self.N][1] - self.HermiteCurve[self.N-1][1],dist)
+                nave.phi = (a+b)*0.5
+            else:
+                nave.theta = np.arctan2(self.HermiteCurve[self.N+1][2] - self.HermiteCurve[self.N][2],
+                                        self.HermiteCurve[self.N+1][0] - self.HermiteCurve[self.N][0])
+
+                dist = np.sqrt((self.HermiteCurve[self.N+1][0]-self.HermiteCurve[self.N][0])**2 + \
+                            (self.HermiteCurve[self.N+1][2]-self.HermiteCurve[self.N][2])**2)
+                nave.phi = np.arctan2(self.HermiteCurve[self.N+1][1] - self.HermiteCurve[self.N][1],dist)
+            
+            #Aun hay problemas con el movimiento ):
+
             nave.update(grafo)
             self.N+=1
 
