@@ -54,11 +54,11 @@ class Controller(pyglet.window.Window):
         self.nave_angular_speed = 3.3
         #OBJETOS
         #muros
-        self.muros_densidad   = 0.01
-        self.muros_altura_max = 1
-        self.muros_largo_max  = 1
+        self.muros_densidad   = 0.09
+        self.muros_altura_max = 12
+        self.muros_largo_max  = 3
         #meteoritos
-        self.meteoritos_total = 0
+        self.meteoritos_total = 4
         #------------------------
 
 if __name__ == '__main__':

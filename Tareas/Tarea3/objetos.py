@@ -295,29 +295,40 @@ class Meteoritos:
         self.meteoritos = np.zeros((total,9),dtype=float)
         for i in range(total):
             self.meteoritos[i][0] = (0.5-np.random.random())*controller.largoMapa #X
-            self.meteoritos[i][1] = np.random.randint(20,50)                                       #Y
+            self.meteoritos[i][1] = np.random.randint(80,120)                      #Y
             self.meteoritos[i][2] = (0.5-np.random.random())*controller.anchoMapa #Z
 
-            self.meteoritos[i][3] = (0.5-np.random.random())*3     #SpeedX
+            self.meteoritos[i][3] = (0.5-np.random.random())*10    #SpeedX
             self.meteoritos[i][4] = -10 -np.random.random()* 10    #SpeedY
-            self.meteoritos[i][5] = (0.5-np.random.random())*1     #SpeedZ
+            self.meteoritos[i][5] = (0.5-np.random.random())*10    #SpeedZ
 
             self.meteoritos[i][6] = np.random.random()*np.pi #angular_speedX
             self.meteoritos[i][7] = np.random.random()*np.pi #Y
             self.meteoritos[i][8] = np.random.random()*np.pi #Z
     
     def update(self,controller,grafo,dt):
+        g = -9.8
         for i in range(self.total):    
             self.meteoritos[i][0] += dt*self.meteoritos[i][3]
-
-            if self.meteoritos[i][1] < -1: 
-                self.meteoritos[i][0]  = (0.5-np.random.random())*controller.largoMapa
-                self.meteoritos[i][1]  = np.random.randint(70,120)
-                self.meteoritos[i][2]  = (0.5-np.random.random())*controller.anchoMapa
-            else:                 
-                self.meteoritos[i][1] += dt*self.meteoritos[i][4]
-
             self.meteoritos[i][2] += dt*self.meteoritos[i][5]
+
+            if abs(self.meteoritos[i][4]) < 0.01 and abs(self.meteoritos[i][1]) < 0.01: 
+                self.meteoritos[i][0]  = (0.5-np.random.random())*controller.largoMapa
+                self.meteoritos[i][1]  = np.random.randint(80,120)
+                self.meteoritos[i][2]  = (0.5-np.random.random())*controller.anchoMapa
+                self.meteoritos[i][4]  = -10 -np.random.random()*10
+                
+            elif self.meteoritos[i][1] + dt*(self.meteoritos[i][4] + dt*g*0.5) > 0:                 
+                self.meteoritos[i][1] += dt*(self.meteoritos[i][4] + dt*g*0.5)
+                self.meteoritos[i][4] += dt*g
+            else:
+                speed_ = (self.meteoritos[i][4]**2 + 2*abs(g)*abs(self.meteoritos[i][1]))**0.5
+                dt1 = (speed_ - abs(self.meteoritos[i][4])) / abs(g)
+                self.meteoritos[i][1] += dt1*(self.meteoritos[i][4] + dt1*g*0.5)
+                self.meteoritos[i][4]  = abs(self.meteoritos[i][4] + dt1*g)*0.4
+                self.meteoritos[i][1] += (dt-dt1)*(self.meteoritos[i][4]+(dt-dt1)*g*0.5)
+                self.meteoritos[i][4] += (dt-dt1)*g
+
 
             meteoritoG = findNode(grafo, self.nodo+str(i))
             meteoritoG.transform = tr.matmul([tr.translate(self.meteoritos[i][0], self.meteoritos[i][1], self.meteoritos[i][2]),
