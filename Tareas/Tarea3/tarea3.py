@@ -58,7 +58,7 @@ class Controller(pyglet.window.Window):
         self.muros_altura_max = 12
         self.muros_largo_max  = 3
         #meteoritos
-        self.meteoritos_total = 4
+        self.meteoritos_total = 3
         #------------------------
 
 if __name__ == '__main__':

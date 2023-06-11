@@ -314,7 +314,7 @@ class Meteoritos:
 
             if abs(self.meteoritos[i][4]) < 0.01 and abs(self.meteoritos[i][1]) < 0.01: 
                 self.meteoritos[i][0]  = (0.5-np.random.random())*controller.largoMapa
-                self.meteoritos[i][1]  = np.random.randint(80,120)
+                self.meteoritos[i][1]  = np.random.randint(50,120)
                 self.meteoritos[i][2]  = (0.5-np.random.random())*controller.anchoMapa
                 self.meteoritos[i][4]  = -10 -np.random.random()*10
                 
