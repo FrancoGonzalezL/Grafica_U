@@ -115,37 +115,25 @@ class Nave:
 class Ruta:
     def __init__(self):
         self.ruta = []
-        self.tiempo = []
         self.dir = []
         self.ruta_data = None
-
         self.lines = True
-
-        #self.cubo = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
-        #self.cubo.texture = textureSimpleSetup(getAssetPath("RED.png"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
-
-        #self.cubo2 = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
-        #self.cubo2.texture = textureSimpleSetup(getAssetPath("BLUE.jpg"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
-
         self.dibujar = False
         self.reprod  = False
         self.N       = 0
         self.HermiteCurve = np.zeros((0,3))
-    
-        self.a = []
+        self.puntos_de_corte = []
 
-    def grabar(self,nave,time):
+    def grabar(self,nave):
         self.ruta.append([nave.positionX,nave.positionY,nave.positionZ])
-        self.tiempo.append(time)
         self.dir.append([nave.theta,nave.phi])
-        self.estado()
+        #self.estado()
         
         if len(self.ruta) > 1:
-            ref = 60
             #posiciones
             P1 = np.array([[self.ruta[-2][0], self.ruta[-2][1], self.ruta[-2][2]]]).T
             P2 = np.array([[self.ruta[-1][0], self.ruta[-1][1], self.ruta[-1][2]]]).T
-            tan = nave.speed*np.sqrt(np.square(self.ruta[-1][0]-self.ruta[-2][0])+np.square(self.ruta[-1][1]-self.ruta[-2][1])+np.square(self.ruta[-1][2]-self.ruta[-2][2]))
+            tan = np.sqrt(np.square(self.ruta[-1][0]-self.ruta[-2][0])+np.square(self.ruta[-1][1]-self.ruta[-2][1])+np.square(self.ruta[-1][2]-self.ruta[-2][2]))
             T1 = np.array([[tan*np.cos(self.dir[-2][0])*np.cos(self.dir[-2][1]),
                             tan*np.sin(self.dir[-2][1]),
                             tan*np.sin(self.dir[-2][0])*np.cos(self.dir[-2][1])]]).T
@@ -153,10 +141,10 @@ class Ruta:
                             tan*np.sin(self.dir[-1][1]),
                             tan*np.sin(self.dir[-1][0])*np.cos(self.dir[-1][1])]]).T
             GMh = hermiteMatrix(P1, P2, T1, T2)
-            HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-1]-self.tiempo[-2])))
+            HermiteCurve = evalCurve(GMh, int(tan/nave.speed)*30)
             self.HermiteCurve = np.concatenate((self.HermiteCurve,HermiteCurve),axis=0)
 
-            self.a.append(len(self.HermiteCurve)-1)
+            self.puntos_de_corte.append(len(self.HermiteCurve)-1)
 
     def reproducir(self,nave,grafo):
         if self.reprod and len(self.HermiteCurve)>0:
@@ -165,7 +153,7 @@ class Ruta:
             nave.positionY = self.HermiteCurve[self.N][1]
             nave.positionZ = self.HermiteCurve[self.N][2]
 
-            if self.N in self.a:#evita errores entre las curvas
+            if self.N in self.puntos_de_corte:#evita errores entre las curvas
                 a = np.arctan2(self.HermiteCurve[self.N+2][2] - self.HermiteCurve[self.N+1][2],
                               self.HermiteCurve[self.N+2][0] - self.HermiteCurve[self.N+1][0]) 
                 b = np.arctan2(self.HermiteCurve[self.N][2] - self.HermiteCurve[self.N-1][2],
@@ -193,14 +181,13 @@ class Ruta:
             self.N+=1
 
     def estado(self):
-        if len(self.ruta)!=0:
+        if len(self.ruta) != 0:
             print("punto agregado: ",self.ruta[-1],end=", ")
             print("orientacion:", self.dir[-1],end=", ")
             print("total de puntos: ", len(self.ruta))
 
     def draw(self,pipeline):
         if self.dibujar:
-
             if self.lines and len(self.HermiteCurve) > 1:
 
                 self.ruta_data = pipeline.vertex_list_indexed(
@@ -213,8 +200,6 @@ class Ruta:
                     chain(*((self.HermiteCurve[i][0], self.HermiteCurve[i][1], self.HermiteCurve[i][2]) for i in range(len(self.HermiteCurve))))
                     )
                 modo = pyglet.gl.GL_LINES
-
-
             elif not self.lines and len(self.ruta) > 0:
                 self.ruta_data = pipeline.vertex_list(
                     len(self.ruta), pyglet.gl.GL_POINTS, position="f"
@@ -228,23 +213,9 @@ class Ruta:
             pipeline.use()
             if self.ruta_data is not None:
                 self.ruta_data.draw(modo)
-
             if self.ruta_data is not None:
                 self.ruta_data.delete()
                 self.ruta_data = None
-
-            #for posicion in self.ruta:
-            #    model = tr.matmul([tr.translate(posicion[0],posicion[1],posicion[2]),
-            #                    tr.uniformScale(0.2)])
-            #    glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
-            #    pipeline.drawCall(self.cubo)
-
-            #for i,pos in enumerate(self.HermiteCurve):
-            #    if i%2==0:
-            #        model = tr.matmul([tr.translate(pos[0],pos[1],pos[2]),
-            #                        tr.uniformScale(0.05)])
-            #        glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
-            #        pipeline.drawCall(self.cubo2)
 
 #Este Grupo solo da vueltas
 class Obstaculos:

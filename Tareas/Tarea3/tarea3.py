@@ -106,16 +106,15 @@ if __name__ == '__main__':
         if symbol == pyglet.window.key.C:
             camera.n_project = (camera.n_project+1)%2
             camera.projection = camera.projections[camera.n_project]
-        if symbol == pyglet.window.key.R:
-            ruta.grabar(nave,controller.total_time)
         if symbol == pyglet.window.key.V:
             ruta.dibujar = not ruta.dibujar
         if symbol == pyglet.window.key._1:
             ruta.N = 0
             ruta.reprod = not ruta.reprod
-            ruta.grabar = False
             
         if ruta.reprod: return
+        if symbol == pyglet.window.key.R:
+            ruta.grabar(nave)
         elif symbol == pyglet.window.key.W:
             nave.speed =  1
         elif symbol == pyglet.window.key.S:
