@@ -106,9 +106,9 @@ def createTextureNormalsCube(lnx,lny,tnx,tny):#l lados, t arriba
     #cara no visible
     # X+          
          0.5, -0.5, -0.5,    0,  0,          1,0,0,
-         0.5,  0.5, -0.5,    lnx, 0,         1,0,0,
+         0.5,  0.5, -0.5,    0, lny,         1,0,0,
          0.5,  0.5,  0.5,    lnx, lny,       1,0,0,
-         0.5, -0.5,  0.5,    0,  lny,        1,0,0,   
+         0.5, -0.5,  0.5,    lnx, 0,         1,0,0,   
 
 
     # X-          
