@@ -29,7 +29,6 @@ def evalCurve(M, N):
     return curve
 
 
-
 class Camera:
     def __init__(self,controller, width , height,):
         dim = controller.dim
@@ -41,9 +40,9 @@ class Camera:
         self.n_project  = 1
         self.projection = self.projections[self.n_project]
 
-        self.eye = np.array([-dim, dim, dim])
+        self.eye = np.array([0.0, 10, 0.0])
         at  = np.array([ 0.0, 0.0, 0.0])
-        up  = np.array([ 0.0, 1.0, 0.0])
+        up  = np.array([ 1.0, 0.0, 0.0])
         self.view = tr.lookAt(self.eye, at, up)
 
     def update(self, controller, nave):
@@ -65,11 +64,11 @@ class Camera:
 
         else:
             #mirar siempre desde una de las esquinas del cubo
-            self.eye = np.array([nave.positionX - controller.dim,
-                                nave.positionY + controller.dim,
-                                nave.positionZ + controller.dim])
-            at  = np.array([nave.positionX,nave.positionY,nave.positionZ])
-            self.view = tr.lookAt(self.eye, at, np.array([0.0,1.0,0.0]))
+            self.eye = np.array([0.0,
+                                 10,
+                                 0.0])
+            at  = np.array([0.0, 0.0, 0.0])
+            self.view = tr.lookAt(self.eye, at, np.array([1.0,0.0,0.0]))
 
 class Nave:
     def __init__(self,max_speed,max_angular_speed):
@@ -93,6 +92,7 @@ class Nave:
         self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
         self.positionY += dt*speed*np.sin(self.phi)
         self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
+        self.positionY = max(0.01, self.positionY)
 
         naves = findNode(grafo,"escuadron")
         naves.transform = tr.translate(self.positionX,
@@ -104,48 +104,36 @@ class Nave:
                                     tr.rotationZ(self.phi)])
 
         sombraEscuadron = findNode(grafo, "sombraEscuadron")
-        sombraEscuadron.transform = tr.matmul([tr.translate(self.positionX, -0.4, self.positionZ)])
+        sombraEscuadron.transform = tr.matmul([tr.translate(self.positionX, 0.001, self.positionZ)])
 
         sombra = findNode(grafo,"sombra")
-        sombra.transform = tr.matmul([tr.scale(1.0, 0.01, 1.0),
+        sombra.transform = tr.matmul([tr.scale(1.0, 0.001, 1.0),
                                       tr.rotationY(-self.theta),
                                       tr.rotationZ(self.phi),
-                                      tr.rotationY(np.pi/2), tr.uniformScale(0.2)])
+                                      tr.rotationY(np.pi/2), tr.uniformScale(0.08)])
 
 class Ruta:
     def __init__(self):
         self.ruta = []
-        self.tiempo = []
         self.dir = []
         self.ruta_data = None
-
         self.lines = True
-
-        #self.cubo = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
-        #self.cubo.texture = textureSimpleSetup(getAssetPath("RED.png"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
-
-        #self.cubo2 = createGPUShape(pipeline, createTextureNormalsCube(1,1,1,1))
-        #self.cubo2.texture = textureSimpleSetup(getAssetPath("BLUE.jpg"), GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST)
-
         self.dibujar = False
         self.reprod  = False
         self.N       = 0
         self.HermiteCurve = np.zeros((0,3))
-    
-        self.a = []
+        self.puntos_de_corte = []
 
-    def grabar(self,nave,time):
+    def grabar(self,nave):
         self.ruta.append([nave.positionX,nave.positionY,nave.positionZ])
-        self.tiempo.append(time)
         self.dir.append([nave.theta,nave.phi])
-        self.estado()
+        #self.estado()
         
         if len(self.ruta) > 1:
-            ref = 60
             #posiciones
             P1 = np.array([[self.ruta[-2][0], self.ruta[-2][1], self.ruta[-2][2]]]).T
             P2 = np.array([[self.ruta[-1][0], self.ruta[-1][1], self.ruta[-1][2]]]).T
-            tan = nave.speed*np.sqrt(np.square(self.ruta[-1][0]-self.ruta[-2][0])+np.square(self.ruta[-1][1]-self.ruta[-2][1])+np.square(self.ruta[-1][2]-self.ruta[-2][2]))
+            tan = np.sqrt(np.square(self.ruta[-1][0]-self.ruta[-2][0])+np.square(self.ruta[-1][1]-self.ruta[-2][1])+np.square(self.ruta[-1][2]-self.ruta[-2][2]))
             T1 = np.array([[tan*np.cos(self.dir[-2][0])*np.cos(self.dir[-2][1]),
                             tan*np.sin(self.dir[-2][1]),
                             tan*np.sin(self.dir[-2][0])*np.cos(self.dir[-2][1])]]).T
@@ -153,10 +141,10 @@ class Ruta:
                             tan*np.sin(self.dir[-1][1]),
                             tan*np.sin(self.dir[-1][0])*np.cos(self.dir[-1][1])]]).T
             GMh = hermiteMatrix(P1, P2, T1, T2)
-            HermiteCurve = evalCurve(GMh, int(ref*(self.tiempo[-1]-self.tiempo[-2])))
+            HermiteCurve = evalCurve(GMh, int(tan/nave.speed)*30)
             self.HermiteCurve = np.concatenate((self.HermiteCurve,HermiteCurve),axis=0)
 
-            self.a.append(len(self.HermiteCurve)-1)
+            self.puntos_de_corte.append(len(self.HermiteCurve)-1)
 
     def reproducir(self,nave,grafo):
         if self.reprod and len(self.HermiteCurve)>0:
@@ -165,7 +153,7 @@ class Ruta:
             nave.positionY = self.HermiteCurve[self.N][1]
             nave.positionZ = self.HermiteCurve[self.N][2]
 
-            if self.N in self.a:#evita errores entre las curvas
+            if self.N in self.puntos_de_corte:#evita errores entre las curvas
                 a = np.arctan2(self.HermiteCurve[self.N+2][2] - self.HermiteCurve[self.N+1][2],
                               self.HermiteCurve[self.N+2][0] - self.HermiteCurve[self.N+1][0]) 
                 b = np.arctan2(self.HermiteCurve[self.N][2] - self.HermiteCurve[self.N-1][2],
@@ -193,14 +181,13 @@ class Ruta:
             self.N+=1
 
     def estado(self):
-        if len(self.ruta)!=0:
+        if len(self.ruta) != 0:
             print("punto agregado: ",self.ruta[-1],end=", ")
             print("orientacion:", self.dir[-1],end=", ")
             print("total de puntos: ", len(self.ruta))
 
     def draw(self,pipeline):
         if self.dibujar:
-
             if self.lines and len(self.HermiteCurve) > 1:
 
                 self.ruta_data = pipeline.vertex_list_indexed(
@@ -213,8 +200,6 @@ class Ruta:
                     chain(*((self.HermiteCurve[i][0], self.HermiteCurve[i][1], self.HermiteCurve[i][2]) for i in range(len(self.HermiteCurve))))
                     )
                 modo = pyglet.gl.GL_LINES
-
-
             elif not self.lines and len(self.ruta) > 0:
                 self.ruta_data = pipeline.vertex_list(
                     len(self.ruta), pyglet.gl.GL_POINTS, position="f"
@@ -228,23 +213,9 @@ class Ruta:
             pipeline.use()
             if self.ruta_data is not None:
                 self.ruta_data.draw(modo)
-
             if self.ruta_data is not None:
                 self.ruta_data.delete()
                 self.ruta_data = None
-
-            #for posicion in self.ruta:
-            #    model = tr.matmul([tr.translate(posicion[0],posicion[1],posicion[2]),
-            #                    tr.uniformScale(0.2)])
-            #    glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
-            #    pipeline.drawCall(self.cubo)
-
-            #for i,pos in enumerate(self.HermiteCurve):
-            #    if i%2==0:
-            #        model = tr.matmul([tr.translate(pos[0],pos[1],pos[2]),
-            #                        tr.uniformScale(0.05)])
-            #        glUniformMatrix4fv(glGetUniformLocation(pipeline.shaderProgram, "model"), 1, GL_TRUE, model)
-            #        pipeline.drawCall(self.cubo2)
 
 #Este Grupo solo da vueltas
 class Obstaculos:
@@ -276,15 +247,22 @@ class Obstaculos:
 
 #grupo con posiciones aleatorias pero estaticas
 class MurosMapa:
-    def __init__(self,controller,densidad,altura_max,largo_max):
+    def __init__(self,controller,densidad,altura_max):
         self.total = 0
         posiciones = []
         for i in range(controller.largoMapa):
             for j in range(controller.anchoMapa):
                 if np.random.random() < densidad:
-                    posiciones.append([i, j, int(1 + np.random.random()*altura_max), int(1+np.random.random()*largo_max)])
+                    posiciones.append([i-controller.largoMapa/2, j-controller.anchoMapa/2, int(1 + np.random.random()*altura_max)])
                     self.total += 1
         self.posiciones = np.array(posiciones)
+    def colision(self, x, y, z):
+        for muro in self.posiciones:
+            mx = muro[0]
+            my = muro[2]
+            mz = muro[1]
+            if abs(x - mx) <= 0.5 and y<=my and abs(z - mz) <= 0.5:
+                print("colision")
 
 
 #Grupo con todo aleatorio
@@ -312,17 +290,17 @@ class Meteoritos:
             self.meteoritos[i][0] += dt*self.meteoritos[i][3]
             self.meteoritos[i][2] += dt*self.meteoritos[i][5]
 
-            if abs(self.meteoritos[i][4]) < 0.01 and abs(self.meteoritos[i][1]) < 0.01: 
+            if abs(self.meteoritos[i][4]) < 0.01 and abs(self.meteoritos[i][1] - 1) < 0.01: 
                 self.meteoritos[i][0]  = (0.5-np.random.random())*controller.largoMapa
                 self.meteoritos[i][1]  = np.random.randint(50,120)
                 self.meteoritos[i][2]  = (0.5-np.random.random())*controller.anchoMapa
                 self.meteoritos[i][4]  = -10 -np.random.random()*10
                 
-            elif self.meteoritos[i][1] + dt*(self.meteoritos[i][4] + dt*g*0.5) > 0:                 
+            elif self.meteoritos[i][1] + dt*(self.meteoritos[i][4] + dt*g*0.5) > 1:                 
                 self.meteoritos[i][1] += dt*(self.meteoritos[i][4] + dt*g*0.5)
                 self.meteoritos[i][4] += dt*g
             else:
-                speed_ = (self.meteoritos[i][4]**2 + 2*abs(g)*abs(self.meteoritos[i][1]))**0.5
+                speed_ = (self.meteoritos[i][4]**2 + 2*abs(g)*abs(self.meteoritos[i][1] - 1))**0.5
                 dt1 = (speed_ - abs(self.meteoritos[i][4])) / abs(g)
                 self.meteoritos[i][1] += dt1*(self.meteoritos[i][4] + dt1*g*0.5)
                 self.meteoritos[i][4]  = abs(self.meteoritos[i][4] + dt1*g)*0.4
