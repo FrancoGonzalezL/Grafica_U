@@ -88,9 +88,10 @@ def separacion(i,pos,R):
     for p in pos:
         if 0.0 < (x-p[0])*(x-p[0]) + (z-p[2])*(z-p[2]) < R*R:
             total += 1
-            ax -= 1/(p[0]-x)
-            az -= 1/(p[2]-z)
-
+            dist = np.sqrt((x-p[0])**2+(z-p[2])**2)
+            #div por 0
+            ax -= 3*(p[0]-x)/dist
+            az -= 3*(p[2]-z)/dist
     if total > 0:
         return (ax/total,0.0, az/total)
     return (0.0,0.0,0.0)
@@ -102,8 +103,10 @@ def evasion(i,pos, muros, R):
     for p in muros:
         if 0.0 < (x-p[0])*(x-p[0]) + (z-p[1])*(z-p[1]) < R*R:
             total += 1
-            ax -= 20/((x-p[0])**2)
-            az -= 20/((z-p[1])**2)
+            dist = ((x-p[0])**2 + (z-p[1])**2)
+            #div por 0
+            ax -= 20*(p[0]-x)/dist
+            az -= 20*(p[1]-z)/dist
     if total > 0:
         return (ax/total, 0.0, az/total)
     return (0.0,0.0,0.0)
@@ -126,10 +129,10 @@ class Boid:
         speed = self.speed.copy()
 
         for i in range(len(pos)):
-            ax, ay, az = alineamiento(i,pos,speed,4)
-            bx, by, bz = cohesion(i,pos,4)
-            cx, cy, cz = separacion(i,pos,1)
-            dx, dy, dz = evasion(i,pos,muros,1)
+            ax, ay, az = alineamiento(i,pos,speed,5)
+            bx, by, bz = cohesion(i,pos,5)
+            cx, cy, cz = separacion(i,pos,2)
+            dx, dy, dz = evasion(i,pos,muros,2*np.sqrt(2))
 
             self.speed[i][0] += (ax+bx+cx+dx)*dt
             self.speed[i][2] += (az+bz+cz+dz)*dt

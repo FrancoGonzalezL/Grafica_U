@@ -38,18 +38,18 @@ class Controller(pyglet.window.Window):
         #------------------------
         #self.dim cambia la distancia a la camara y el tamaño de los objetos
         #mientras mas grande su valor mas pequeño se ve todo
-        self.dim    =  20
+        self.dim    =  30
         self.div    = width/height
 
         #mapa
-        self.anchoMapa = 20
-        self.largoMapa = 20
+        self.anchoMapa = self.dim
+        self.largoMapa = self.dim
         #nave
         self.nave_speed         = 4
         self.nave_angular_speed = 5
         #OBJETOS
         #muros
-        self.muros_densidad   = 0.03
+        self.muros_densidad   = 0.01
         self.muros_altura_max = 1
         #meteoritos
         self.meteoritos_total = 0
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     controller.pipeline2.use()
 
 
-    boid = objetos.Boid(45,controller.anchoMapa,controller.largoMapa)
+    boid = objetos.Boid(75,controller.anchoMapa,controller.largoMapa)
     nave = objetos.Nave(controller.nave_speed, controller.nave_angular_speed)
     muros = objetos.MurosMapa(controller, controller.muros_densidad, controller.muros_altura_max)
     meteoritos = objetos.Meteoritos(controller, "meteorito", controller.meteoritos_total)
