@@ -17,11 +17,6 @@ from pyglet.graphics.shader import Shader, ShaderProgram
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-"""
-    W,D: para avanzar o retroceder
-    A,D: para girar (izquierda, derecha)
-    mouse: la nave sube o baja dependiendo de la posicion del mouse
-"""
 
 class Controller(pyglet.window.Window):
     def __init__(self, width, height, title=f"Tarea4, Franco González"):
@@ -43,34 +38,34 @@ class Controller(pyglet.window.Window):
         #------------------------
         #self.dim cambia la distancia a la camara y el tamaño de los objetos
         #mientras mas grande su valor mas pequeño se ve todo
-        self.dim    =  7
+        self.dim    =  20
         self.div    = width/height
 
         #mapa
-        self.anchoMapa = 16
-        self.largoMapa = 30
+        self.anchoMapa = 20
+        self.largoMapa = 20
         #nave
         self.nave_speed         = 4
         self.nave_angular_speed = 5
         #OBJETOS
         #muros
-        self.muros_densidad   = 0.09
-        self.muros_altura_max = 12
+        self.muros_densidad   = 0.03
+        self.muros_altura_max = 1
         #meteoritos
         self.meteoritos_total = 0
         #------------------------
 
 if __name__ == '__main__':
 
-    WIDTH, HEIGHT = 1000, 700
+    WIDTH, HEIGHT = 800, 800
     controller = Controller(width=WIDTH, height=HEIGHT)
     camera = objetos.Camera(controller, WIDTH, HEIGHT)
 
     controller.pipeline2.use()
 
 
+    boid = objetos.Boid(45,controller.anchoMapa,controller.largoMapa)
     nave = objetos.Nave(controller.nave_speed, controller.nave_angular_speed)
-    ruta = objetos.Ruta()
     muros = objetos.MurosMapa(controller, controller.muros_densidad, controller.muros_altura_max)
     meteoritos = objetos.Meteoritos(controller, "meteorito", controller.meteoritos_total)
     obstaculos = np.array([objetos.Obstaculos(controller,"among1", 0.5),
@@ -100,20 +95,10 @@ if __name__ == '__main__':
         if symbol == pyglet.window.key.ESCAPE:
             controller.close()
 
-        if symbol == pyglet.window.key.L:
-            ruta.lines = not ruta.lines
         if symbol == pyglet.window.key.C:
             camera.n_project = (camera.n_project+1)%2
             camera.projection = camera.projections[camera.n_project]
-        if symbol == pyglet.window.key.R:
-            ruta.grabar(nave)
-        if symbol == pyglet.window.key.V:
-            ruta.dibujar = not ruta.dibujar
-        if symbol == pyglet.window.key._1:
-            ruta.N = 0
-            ruta.reprod = not ruta.reprod
             
-        if ruta.reprod: return
         elif symbol == pyglet.window.key.W:
             nave.speed =  1
         elif symbol == pyglet.window.key.S:
@@ -126,8 +111,7 @@ if __name__ == '__main__':
 
     @controller.event
     def on_key_release(symbol, modifiers):
-        if ruta.reprod: return
-        elif   symbol == pyglet.window.key.W:
+        if   symbol == pyglet.window.key.W:
             nave.speed = 0
         elif symbol == pyglet.window.key.S:
             nave.speed = 0
@@ -150,9 +134,6 @@ if __name__ == '__main__':
         glUseProgram(controller.pipeline.shaderProgram)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-        #reproduce la trayectoria grabada
-        ruta.reproducir(nave,escena)
-
         #actualiza camara con la posicion de la nave
         camera.update(controller, nave)
         
@@ -167,16 +148,19 @@ if __name__ == '__main__':
         #dibujo de la curva
         controller.pipeline2["projection"] = camera.projection.reshape(16, 1, order="F")
         controller.pipeline2["view"] = camera.view.reshape(16, 1, order="F")
-        
-        ruta.draw(controller.pipeline2)
+        boid.draw(controller.pipeline2)
 
 
-    def update(dt,controller, nave, obstaculos, meteoritos, escena):
+
+
+
+    def update(dt,controller, nave, obstaculos, meteoritos, escena, boid,muros):
+        boid.step(controller,muros.posiciones,dt)
         controller.total_time += dt
         nave.update(escena, dt)
         meteoritos.update(controller,escena,dt)
         for obstaculo in obstaculos:
             obstaculo.update(controller,escena, dt)
 
-    pyglet.clock.schedule(update, controller, nave, obstaculos,meteoritos, escena)
+    pyglet.clock.schedule(update, controller, nave, obstaculos,meteoritos, escena, boid, muros)
     pyglet.app.run(1/60)

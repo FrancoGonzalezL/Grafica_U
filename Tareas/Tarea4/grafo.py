@@ -120,7 +120,7 @@ def grafo(controller,pipeline,muros,meteorit):
     among2.childs += [gpuAmong2]
 #-----------------------------------
     textsuelo = SceneGraphNode("textSuelo")
-    textsuelo.transform = tr.matmul([tr.translate(0.0,0.0,0.0),
+    textsuelo.transform = tr.matmul([tr.translate(controller.dim/2,0.0,controller.dim/2),
                                      tr.scale(controller.largoMapa+200, 0.01, controller.anchoMapa+30)])
     textsuelo.childs += [gpuSuelo]
 
@@ -135,7 +135,7 @@ def grafo(controller,pipeline,muros,meteorit):
     for i in range(len(muros.posiciones)):
         murosL[i] = SceneGraphNode("pilar"+str(i))
         murosL[i].transform = tr.matmul([tr.translate(muros.posiciones[i][0],
-                                                      1.0,
+                                                      0.5,
                                                       muros.posiciones[i][1]),
                                         tr.scale(1.0, muros.posiciones[i][2], 1.0)])
         murosL[i].childs += [gpuMuro[i]]

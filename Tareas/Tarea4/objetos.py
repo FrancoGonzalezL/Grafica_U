@@ -10,38 +10,19 @@ from itertools import chain
 
 import pyglet
 
-def generateT(t):
-    return np.array([[1, t, t**2, t**3]]).T
-def hermiteMatrix(P1, P2, T1, T2):
-    G = np.concatenate((P1, P2, T1, T2), axis=1)
-    Mh = np.array([[1, 0, -3, 2], [0, 0, 3, -2], [0, 1, -2, 1], [0, 0, -1, 1]])
-    return np.matmul(G, Mh)
-def bezierMatrix(P0, P1, P2, P3):
-    G = np.concatenate((P0, P1, P2, P3), axis=1)
-    Mb = np.array([[1, -3, 3, -1], [0, 3, -6, 3], [0, 0, 3, -3], [0, 0, 0, 1]])
-    return np.matmul(G, Mb)
-def evalCurve(M, N):
-    ts = np.linspace(0.0, 1.0, N)
-    curve = np.ndarray(shape=(N, 3), dtype=float)
-    for i in range(len(ts)):
-        T = generateT(ts[i])
-        curve[i, 0:3] = np.matmul(M, T).T
-    return curve
-
-
 class Camera:
     def __init__(self,controller, width , height,):
         dim = controller.dim
         div = controller.div
         self.projections = [
                 tr.perspective(60, float(width)/float(height), 0.1, 100),
-                tr.ortho(-dim*div, dim*div, -dim, dim, 0.1, 100)
+                tr.ortho(-dim/2, dim/2, -dim/2, dim/2, 0.1, 100)
                 ]
         self.n_project  = 1
         self.projection = self.projections[self.n_project]
 
-        self.eye = np.array([0.0, 10, 0.0])
-        at  = np.array([ 0.0, 0.0, 0.0])
+        self.eye = np.array([dim/2, 10, dim/2])
+        at  = np.array([dim/2, 0.0, dim/2])
         up  = np.array([ 1.0, 0.0, 0.0])
         self.view = tr.lookAt(self.eye, at, up)
 
@@ -64,11 +45,128 @@ class Camera:
 
         else:
             #mirar siempre desde una de las esquinas del cubo
-            self.eye = np.array([0.0,
+            dim = controller.dim
+            self.eye = np.array([dim/2,
                                  10,
-                                 0.0])
-            at  = np.array([0.0, 0.0, 0.0])
+                                 dim/2])
+            at  = np.array([dim/2, 0.0, dim/2])
             self.view = tr.lookAt(self.eye, at, np.array([1.0,0.0,0.0]))
+
+
+def alineamiento(i,pos,speed,R):
+    x, y, z = pos[i][0], pos[i][1], pos[i][2]
+    ax, ay, az = 0.0, 0.0, 0.0
+    total = 0
+    for j, p in enumerate(pos):
+        if 0.0 < (x-p[0])*(x-p[0]) + (y-p[1])*(y-p[1]) + (z-p[2])*(z-p[2]) < R*R:
+            total += 1
+            ax += speed[j][0]
+            ay += speed[j][1]
+            az += speed[j][2]
+    if total>0:
+        return (ax/total-speed[i][0], ay/total-speed[i][1], az/total-speed[i][2])
+    return (0.0,0.0,0.0)
+
+def cohesion(i,pos,R):
+    x, y, z = pos[i][0], pos[i][1], pos[i][2]
+    ax, ay, az = 0.0, 0.0, 0.0
+    total = 0
+    for p in pos:
+        if 0.0 < (x-p[0])*(x-p[0]) + (y-p[1])*(y-p[1]) + (z-p[2])*(z-p[2]) < R*R:
+            total += 1
+            ax += p[0]
+            ay += p[1]
+            az += p[2]
+    if total>0:
+        return (ax/total-x, ay/total-y, az/total-z)
+    return (0.0,0.0,0.0)
+
+def separacion(i,pos,R):
+    x, y, z = pos[i][0], pos[i][1], pos[i][2]
+    ax, az = 0.0, 0.0
+    total = 0
+    for p in pos:
+        if 0.0 < (x-p[0])*(x-p[0]) + (z-p[2])*(z-p[2]) < R*R:
+            total += 1
+            ax -= 1/(p[0]-x)
+            az -= 1/(p[2]-z)
+
+    if total > 0:
+        return (ax/total,0.0, az/total)
+    return (0.0,0.0,0.0)
+
+def evasion(i,pos, muros, R):
+    x, y, z = pos[i][0], pos[i][1], pos[i][2]
+    ax, az = 0.0, 0.0
+    total = 0
+    for p in muros:
+        if 0.0 < (x-p[0])*(x-p[0]) + (z-p[1])*(z-p[1]) < R*R:
+            total += 1
+            ax -= 20/((x-p[0])**2)
+            az -= 20/((z-p[1])**2)
+    if total > 0:
+        return (ax/total, 0.0, az/total)
+    return (0.0,0.0,0.0)
+
+class Boid:
+    def __init__(self,total,ancho,largo):
+        self.pos   = np.ones((total,3), dtype=float)
+        self.speed = np.zeros((total,3),dtype=float)
+        for i in range(len(self.pos)):
+            self.pos[i][0] = (np.random.random()-0.5)*ancho/2 + ancho/2
+            self.pos[i][2] = (np.random.random()-0.5)*largo/2 + largo/2
+
+            self.speed[i][0] = (np.random.random()-0.5)*8
+            p = 1 if np.random.randint(2)==0 else -1
+            self.speed[i][2] = np.sqrt(16-self.speed[i][0]*self.speed[i][0]) *p
+        self.data = None
+    
+    def step(self,controller,muros,dt):
+        pos = self.pos.copy()
+        speed = self.speed.copy()
+
+        for i in range(len(pos)):
+            ax, ay, az = alineamiento(i,pos,speed,4)
+            bx, by, bz = cohesion(i,pos,4)
+            cx, cy, cz = separacion(i,pos,1)
+            dx, dy, dz = evasion(i,pos,muros,1)
+
+            self.speed[i][0] += (ax+bx+cx+dx)*dt
+            self.speed[i][2] += (az+bz+cz+dz)*dt
+
+            s = np.sqrt(self.speed[i][0]*self.speed[i][0] + self.speed[i][2]*self.speed[i][2])
+            self.speed[i][0] = 4*self.speed[i][0]/s
+            self.speed[i][2] = 4*self.speed[i][2]/s
+
+            self.pos[i][0] += self.speed[i][0]*dt
+            self.pos[i][2] += self.speed[i][2]*dt
+
+            if self.pos[i][0] < 0.0:
+                self.pos[i][0] = controller.dim
+            elif self.pos[i][0] > controller.dim:
+                self.pos[i][0] = 0.0
+            if self.pos[i][2] < 0.0:
+                self.pos[i][2] = controller.dim
+            elif self.pos[i][2] > controller.dim:
+                self.pos[i][2] = 0.0
+
+    def draw(self, pipeline):
+
+        self.data = pipeline.vertex_list(
+            len(self.pos), pyglet.gl.GL_POINTS, position="f"
+            )
+        self.data.position[:] = tuple(
+            chain(*((p[0],p[1],p[2]) for p in self.pos))
+            )
+
+        glEnable(GL_PROGRAM_POINT_SIZE)
+
+        pipeline.use()
+        if self.data is not None:
+            self.data.draw(pyglet.gl.GL_POINTS)
+        if self.data is not None:
+            self.data.delete()
+            self.data = None
 
 class Nave:
     def __init__(self,max_speed,max_angular_speed):
@@ -92,7 +190,7 @@ class Nave:
         self.positionX += dt*speed*np.cos(self.theta)*np.cos(self.phi)
         self.positionY += dt*speed*np.sin(self.phi)
         self.positionZ += dt*speed*np.sin(self.theta)*np.cos(self.phi)
-        self.positionY = max(0.01, self.positionY)
+        self.positionY = max(0.5, self.positionY)
 
         naves = findNode(grafo,"escuadron")
         naves.transform = tr.translate(self.positionX,
@@ -112,110 +210,6 @@ class Nave:
                                       tr.rotationZ(self.phi),
                                       tr.rotationY(np.pi/2), tr.uniformScale(0.08)])
 
-class Ruta:
-    def __init__(self):
-        self.ruta = []
-        self.dir = []
-        self.ruta_data = None
-        self.lines = True
-        self.dibujar = False
-        self.reprod  = False
-        self.N       = 0
-        self.HermiteCurve = np.zeros((0,3))
-        self.puntos_de_corte = []
-
-    def grabar(self,nave):
-        self.ruta.append([nave.positionX,nave.positionY,nave.positionZ])
-        self.dir.append([nave.theta,nave.phi])
-        #self.estado()
-        
-        if len(self.ruta) > 1:
-            #posiciones
-            P1 = np.array([[self.ruta[-2][0], self.ruta[-2][1], self.ruta[-2][2]]]).T
-            P2 = np.array([[self.ruta[-1][0], self.ruta[-1][1], self.ruta[-1][2]]]).T
-            tan = np.sqrt(np.square(self.ruta[-1][0]-self.ruta[-2][0])+np.square(self.ruta[-1][1]-self.ruta[-2][1])+np.square(self.ruta[-1][2]-self.ruta[-2][2]))
-            T1 = np.array([[tan*np.cos(self.dir[-2][0])*np.cos(self.dir[-2][1]),
-                            tan*np.sin(self.dir[-2][1]),
-                            tan*np.sin(self.dir[-2][0])*np.cos(self.dir[-2][1])]]).T
-            T2 = np.array([[tan*np.cos(self.dir[-1][0])*np.cos(self.dir[-1][1]),
-                            tan*np.sin(self.dir[-1][1]),
-                            tan*np.sin(self.dir[-1][0])*np.cos(self.dir[-1][1])]]).T
-            GMh = hermiteMatrix(P1, P2, T1, T2)
-            HermiteCurve = evalCurve(GMh, int(tan/nave.speed)*30)
-            self.HermiteCurve = np.concatenate((self.HermiteCurve,HermiteCurve),axis=0)
-
-            self.puntos_de_corte.append(len(self.HermiteCurve)-1)
-
-    def reproducir(self,nave,grafo):
-        if self.reprod and len(self.HermiteCurve)>0:
-            if self.N > len(self.HermiteCurve)-2: self.N = 0
-            nave.positionX = self.HermiteCurve[self.N][0]
-            nave.positionY = self.HermiteCurve[self.N][1]
-            nave.positionZ = self.HermiteCurve[self.N][2]
-
-            if self.N in self.puntos_de_corte:#evita errores entre las curvas
-                a = np.arctan2(self.HermiteCurve[self.N+2][2] - self.HermiteCurve[self.N+1][2],
-                              self.HermiteCurve[self.N+2][0] - self.HermiteCurve[self.N+1][0]) 
-                b = np.arctan2(self.HermiteCurve[self.N][2] - self.HermiteCurve[self.N-1][2],
-                              self.HermiteCurve[self.N][0] - self.HermiteCurve[self.N-1][0])
-                nave.theta = (a+b)*0.5
-
-                dist = np.sqrt((self.HermiteCurve[self.N+2][0]-self.HermiteCurve[self.N+1][0])**2 + \
-                            (self.HermiteCurve[self.N+2][2]-self.HermiteCurve[self.N+1][2])**2)
-                a = np.arctan2(self.HermiteCurve[self.N+2][1] - self.HermiteCurve[self.N+1][1],dist)
-                dist = np.sqrt((self.HermiteCurve[self.N][0]-self.HermiteCurve[self.N-1][0])**2 + \
-                            (self.HermiteCurve[self.N][2]-self.HermiteCurve[self.N-1][2])**2)
-                b = np.arctan2(self.HermiteCurve[self.N][1] - self.HermiteCurve[self.N-1][1],dist)
-                nave.phi = (a+b)*0.5
-            else:
-                nave.theta = np.arctan2(self.HermiteCurve[self.N+1][2] - self.HermiteCurve[self.N][2],
-                                        self.HermiteCurve[self.N+1][0] - self.HermiteCurve[self.N][0])
-
-                dist = np.sqrt((self.HermiteCurve[self.N+1][0]-self.HermiteCurve[self.N][0])**2 + \
-                            (self.HermiteCurve[self.N+1][2]-self.HermiteCurve[self.N][2])**2)
-                nave.phi = np.arctan2(self.HermiteCurve[self.N+1][1] - self.HermiteCurve[self.N][1],dist)
-            
-            #Aun hay problemas con el movimiento ):
-
-            nave.update(grafo)
-            self.N+=1
-
-    def estado(self):
-        if len(self.ruta) != 0:
-            print("punto agregado: ",self.ruta[-1],end=", ")
-            print("orientacion:", self.dir[-1],end=", ")
-            print("total de puntos: ", len(self.ruta))
-
-    def draw(self,pipeline):
-        if self.dibujar:
-            if self.lines and len(self.HermiteCurve) > 1:
-
-                self.ruta_data = pipeline.vertex_list_indexed(
-                len(self.HermiteCurve),
-                pyglet.gl.GL_LINES,
-                tuple(chain(*([i,i+1] for i in range(len(self.HermiteCurve)-1)))),
-                position="f",
-                )
-                self.ruta_data.position[:] = tuple(
-                    chain(*((self.HermiteCurve[i][0], self.HermiteCurve[i][1], self.HermiteCurve[i][2]) for i in range(len(self.HermiteCurve))))
-                    )
-                modo = pyglet.gl.GL_LINES
-            elif not self.lines and len(self.ruta) > 0:
-                self.ruta_data = pipeline.vertex_list(
-                    len(self.ruta), pyglet.gl.GL_POINTS, position="f"
-                    )
-                self.ruta_data.position[:] = tuple(
-                    chain(*((p[0],p[1],p[2]) for p in self.ruta))
-                    )
-                modo = pyglet.gl.GL_POINTS
-                glEnable(GL_PROGRAM_POINT_SIZE)
-
-            pipeline.use()
-            if self.ruta_data is not None:
-                self.ruta_data.draw(modo)
-            if self.ruta_data is not None:
-                self.ruta_data.delete()
-                self.ruta_data = None
 
 #Este Grupo solo da vueltas
 class Obstaculos:
@@ -253,7 +247,7 @@ class MurosMapa:
         for i in range(controller.largoMapa):
             for j in range(controller.anchoMapa):
                 if np.random.random() < densidad:
-                    posiciones.append([i-controller.largoMapa/2, j-controller.anchoMapa/2, int(1 + np.random.random()*altura_max)])
+                    posiciones.append([i, j, int(1 + np.random.random()*altura_max)])
                     self.total += 1
         self.posiciones = np.array(posiciones)
     def colision(self, x, y, z):
